@@ -62,7 +62,7 @@ dependencies {
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
 
-    // Changed from 21.4.0 to 21.2.0 to resolve Kotlin compiler metadata incompatibility
+    // Downgraded to 21.2.0 to avoid Kotlin 2.3.0 metadata incompatibility with current compiler version
     implementation("com.google.android.gms:play-services-location:21.2.0")
     implementation("org.osmdroid:osmdroid-android:6.1.20")
 
