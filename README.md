@@ -1,31 +1,32 @@
-# NetSwitch
+# NetSwitch 📶
 
-> Geofence-based Wi-Fi reminder for Android. All data stays on device.
+An Android geofence-based reminder that alerts you when you arrive home to switch to Wi‑Fi and turn off mobile data.
 
-NetSwitch monitors your location in the background and sends a high-priority notification when you arrive home, letting you toggle Wi-Fi or mobile data with one tap.
+## ✨ Features
 
-## Screenshots
+- 🗺️ Tap-to-set home location with Google Maps
+- 📏 Adjustable geofence radius (50–500 m) with live visualization
+- 🔔 High-priority notifications with one-tap action buttons
+- 🌙 Background monitoring with foreground service
+- 💾 DataStore persistence for home coordinates and settings
+- 🎨 Modern Material 3 dark theme UI
 
-*(Add screenshots here)*
+## 📱 Requirements
 
-## Features
+- Android 8.0 (API 26) or higher
+- Google Play Services (for Maps & Location)
+- Google Maps API key
 
-- **Privacy-first** — No cloud, no accounts, no tracking. Everything is stored locally in DataStore.
-- **Dark dashboard** — Jetpack Compose UI with live map, distance readout, and telemetry-style visuals.
-- **Custom geofence radius** — Adjustable from 50 m to 500 m with live map preview.
-- **Battery-aware** — Uses a foreground service only while monitoring; respects Doze and App Standby.
-- **HyperOS / MIUI guidance** — In-app hints for Chinese OEM battery optimizers.
+## 🛠️ Build Instructions
 
-## Tech Stack
+### Prerequisites
 
-| Layer | Tech |
-|-------|------|
-| UI | Jetpack Compose (Material 3), `maps-compose` |
-| Location | Google Play Services Location (Fused + Geofencing) |
-| Storage | DataStore Preferences |
-| Architecture | MVVM, StateFlow, Coroutines |
-| Min SDK | 26 (Android 8.0) |
-| Target SDK | 34 |
+| Tool | Version | Notes |
+|------|---------|-------|
+| **Android Studio** | Hedgehog 2023.1.1+ | [Download](https://developer.android.com/studio) |
+| **JDK** | 17 | Bundled with Android Studio |
+| **Gradle** | 8.2 | Managed via wrapper (auto-downloaded) |
+| **Android SDK** | API 34 | Install via SDK Manager |
 
 ## Setup
 
