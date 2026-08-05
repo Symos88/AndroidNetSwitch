@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">NetSwitch</string>
+    <string name="channel_description">High priority notifications when arriving home</string>
+    <string name="channel_name">Geofence Alerts</string>
+    <string name="google_maps_api_key">YOUR_API_KEY_HERE</string>
+    <string name="notification_message">Tap to open Wi-Fi settings</string>
+    <string name="notification_title">Welcome home</string>
+    <style name="Theme.NetSwitch" parent="android:Theme.Material.Light.NoActionBar"/>
+</resources>

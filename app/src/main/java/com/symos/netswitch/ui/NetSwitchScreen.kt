@@ -8,7 +8,6 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -72,6 +71,7 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.symos.netswitch.R
 import com.symos.netswitch.ui.components.AppTopBar
@@ -106,7 +106,6 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // ── Permission state ────────────────────────────────────────────────
     var fineGranted by remember { mutableStateOf(context.has(Manifest.permission.ACCESS_FINE_LOCATION)) }
     var bgGranted by remember { mutableStateOf(context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) }
     var notifGranted by remember {
@@ -120,7 +119,6 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
 
     var pendingEnable by remember { mutableStateOf(false) }
 
-    // ── Permission launchers (order matters: notif → finish → bg → fine) ─
     val notifLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { refresh() }
@@ -142,7 +140,7 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
         refresh()
         if (pendingEnable) {
             if (!granted) scope.launch {
-                snackbar.showSnackbar("All‑time location denied – alerts may be delayed")
+                snackbar.showSnackbar("All-time location denied - alerts may be delayed")
             }
             finishEnable()
         }
@@ -176,7 +174,6 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
         }
     }
 
-    // Refresh permissions + distance on every resume
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -189,9 +186,8 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // ── Map state ───────────────────────────────────────────────────────
     val cameraState = rememberCameraPositionState {
-        position = CameraPosition(LatLng(47.4979, 19.0402), 11.0f) // Hungary default
+        position = CameraPosition.fromLatLngZoom(LatLng(47.4979, 19.0402), 11.0f)
     }
     val mapStyle = remember {
         runCatching {
@@ -203,7 +199,7 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
     }
     LaunchedEffect(ui.home) {
         ui.home?.let {
-            cameraState.position = CameraPosition(LatLng(it.latitude, it.longitude), 15f)
+            cameraState.position = CameraPosition.fromLatLngZoom(LatLng(it.latitude, it.longitude), 15f)
         }
     }
     LaunchedEffect(ui.selected) {
@@ -230,7 +226,6 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
 
-            // ── Hero status card ─────────────────────────────────────────
             Surface(shape = RoundedCornerShape(16.dp), color = Card,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Line)) {
                 Column(Modifier.padding(18.dp)) {
@@ -259,11 +254,10 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // ── Stat cards ───────────────────────────────────────────────
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 StatCard(
                     label = "HOME",
-                    value = if (ui.home != null) "SET" else "—",
+                    value = if (ui.home != null) "SET" else "-",
                     caption = ui.home?.let { String.format("%.4f, %.4f", it.latitude, it.longitude) }
                         ?: "tap the map below",
                     accent = if (ui.home != null) Teal else Orange,
@@ -271,7 +265,7 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                 )
                 StatCard(
                     label = "DISTANCE",
-                    value = distance?.formatDistance() ?: "—",
+                    value = distance?.formatDistance() ?: "-",
                     caption = "from home",
                     accent = Cyan,
                     modifier = Modifier.weight(1f)
@@ -285,7 +279,6 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                 )
             }
 
-            // ── Map card ─────────────────────────────────────────────────
             Surface(shape = RoundedCornerShape(16.dp), color = Card,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Line)) {
                 Box(Modifier.height(340.dp)) {
@@ -317,7 +310,7 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                                 strokeWidth = 3f
                             )
                             Marker(
-                                position = pos,
+                                state = MarkerState(position = pos),
                                 title = "Home",
                                 icon = if (ui.selected != null) pickIcon else homeIcon
                             )
@@ -337,52 +330,48 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                         }
                     }
 
-                    // Save bar
                     val sel = ui.selected
-                    AnimatedVisibility(
-                        visible = sel != null,
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    ) {
-                        Surface(
-                            Modifier.padding(10.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = CardHigh.copy(alpha = 0.97f),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, Teal.copy(alpha = 0.6f))
-                        ) {
-                            Row(
-                                Modifier.padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    if (sel != null) {
+                        Box(Modifier.align(Alignment.BottomCenter).padding(10.dp)) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = CardHigh.copy(alpha = 0.97f),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Teal.copy(alpha = 0.6f))
                             ) {
-                                Icon(Icons.Rounded.LocationOn, null, tint = Pink, modifier = Modifier.size(20.dp))
-                                Column(Modifier.weight(1f)) {
-                                    SectionLabel("NEW HOME")
-                                    Text(
-                                        sel?.let { String.format("%.5f, %.5f", it.latitude, it.longitude) } ?: "",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = TextMain
-                                    )
+                                Row(
+                                    Modifier.padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Icon(Icons.Rounded.LocationOn, null, tint = Pink, modifier = Modifier.size(20.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        SectionLabel("NEW HOME")
+                                        Text(
+                                            String.format("%.5f, %.5f", sel.latitude, sel.longitude),
+                                            style = MaterialTheme.typography.titleMedium,
+                                            color = TextMain
+                                        )
+                                    }
+                                    IconButton(onClick = viewModel::clearSelection) {
+                                        Icon(Icons.Rounded.Close, "Cancel", tint = TextDim)
+                                    }
+                                    Button(
+                                        onClick = {
+                                            viewModel.saveSelection {
+                                                scope.launch { snackbar.showSnackbar("Home saved") }
+                                            }
+                                        },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = Teal, contentColor = TealDark
+                                        )
+                                    ) { Text("SAVE") }
                                 }
-                                IconButton(onClick = viewModel::clearSelection) {
-                                    Icon(Icons.Rounded.Close, "Cancel", tint = TextDim)
-                                }
-                                Button(
-                                    onClick = {
-                                        viewModel.saveSelection {
-                                            scope.launch { snackbar.showSnackbar("Home saved") }
-                                        }
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Teal, contentColor = TealDark
-                                    )
-                                ) { Text("SAVE") }
                             }
                         }
                     }
                 }
             }
 
-            // ── Radius slider card ───────────────────────────────────────
             Surface(shape = RoundedCornerShape(16.dp), color = Card,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Line)) {
                 Column(Modifier.padding(16.dp)) {
@@ -415,7 +404,6 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // ── Monitoring card ──────────────────────────────────────────
             Surface(shape = RoundedCornerShape(16.dp), color = Card,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Line)) {
                 Column(Modifier.padding(16.dp)) {
@@ -451,10 +439,10 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
                             )
                         }
-                        PermissionChip("ALL‑TIME", bgGranted) {
+                        PermissionChip("ALL-TIME", bgGranted) {
                             if (Build.VERSION.SDK_INT >= 29) {
                                 scope.launch {
-                                    snackbar.showSnackbar("Choose “Allow all the time”")
+                                    snackbar.showSnackbar("Choose Allow all the time")
                                 }
                                 context.startActivity(
                                     Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
@@ -476,19 +464,18 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                 }
             }
 
-            // ── How it works ─────────────────────────────────────────────
             Surface(shape = RoundedCornerShape(16.dp), color = Card,
                 border = androidx.compose.foundation.BorderStroke(1.dp, Line)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     SectionLabel("HOW IT WORKS")
-                    FlowItem(Icons.Rounded.LocationOn, Teal, "1 · A geofence watches your home zone in the background.")
-                    FlowItem(Icons.Rounded.NotificationsActive, Orange, "2 · On arrival you get a high‑priority alert.")
-                    FlowItem(Icons.Rounded.Wifi, Pink, "3 · One tap opens Wi‑Fi or mobile‑data settings.")
+                    FlowItem(Icons.Rounded.LocationOn, Teal, "1 - A geofence watches your home zone in the background.")
+                    FlowItem(Icons.Rounded.NotificationsActive, Orange, "2 - On arrival you get a high-priority alert.")
+                    FlowItem(Icons.Rounded.Wifi, Pink, "3 - One tap opens Wi-Fi or mobile-data settings.")
                 }
             }
 
             Text(
-                "Geofence‑based Wi‑Fi reminder · all data stays on device",
+                "Geofence-based Wi-Fi reminder - all data stays on device",
                 style = MaterialTheme.typography.labelSmall,
                 color = TextDim,
                 modifier = Modifier.padding(vertical = 4.dp)
