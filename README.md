@@ -67,7 +67,7 @@ git push -u origin main
 
 ---
 
-## 📱 Installation Guide (Poco F7 Pro / HyperOS)
+## 📱 Installation Guide (Android)
 
 1.  **Transfer:** Copy `app-debug.apk` to your phone (Cloud Drive, USB, or Telegram Saved Messages).
 2.  **Install:** Tap the file in your File Manager. Select **Install anyway** if Play Protect warns about sideloading.
