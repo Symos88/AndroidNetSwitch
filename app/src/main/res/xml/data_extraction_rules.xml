@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
     <cloud-backup>
+<<<<<<< HEAD
+=======
+        <include domain="sharedpref" path="."/>
+>>>>>>> 4796efa6d360366945c93e5b3f35e036dc81a035
     </cloud-backup>
 </data-extraction-rules>

@@ -1,9 +1,21 @@
+<<<<<<< HEAD
+=======
+<?xml version="1.0" encoding="utf-8"?>
+>>>>>>> 4796efa6d360366945c93e5b3f35e036dc81a035
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
+<<<<<<< HEAD
     android:viewportHeight="24">
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M12,3 L21,10 L18,10 L18,21 L14,21 L14,14 L10,14 L10,21 L6,21 L6,10 L3,10 Z" />
+=======
+    android:viewportHeight="24"
+    android:tint="#3BE8C8">
+    <path
+        android:fillColor="#3BE8C8"
+        android:pathData="M12,2C8.13,2 5,5.13 5,9c0,5.25 7,13 7,13s7,-7.75 7,-13c0,-3.87 -3.13,-7 -7,-7zM12,11.5c-1.38,0 -2.5,-1.12 -2.5,-2.5s1.12,-2.5 2.5,-2.5 2.5,1.12 2.5,2.5 -1.12,2.5 -2.5,2.5z"/>
+>>>>>>> 4796efa6d360366945c93e5b3f35e036dc81a035
 </vector>

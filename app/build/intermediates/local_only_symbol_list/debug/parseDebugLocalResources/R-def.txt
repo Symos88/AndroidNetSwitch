@@ -1,0 +1,19 @@
+R_DEF: Internal format may change without notice
+local
+drawable ic_data
+drawable ic_launcher_background
+drawable ic_launcher_foreground
+drawable ic_notification
+drawable ic_wifi
+mipmap ic_launcher
+mipmap ic_launcher_round
+raw map_style_dark
+string app_name
+string channel_description
+string channel_name
+string google_maps_api_key
+string notification_message
+string notification_title
+style Theme.NetSwitch
+xml backup_rules
+xml data_extraction_rules

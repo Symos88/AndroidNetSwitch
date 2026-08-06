@@ -1,0 +1,82 @@
+[
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\mipmap-xhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\mipmap-xhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\drawable_ic_data.xml.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\drawable\\ic_data.xml"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\xml_backup_rules.xml.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\xml\\backup_rules.xml"
+    },
+    {
+        "merged": "com.symos.netswitch.app-debug-56:/raw_map_style_dark.json.flat",
+        "source": "com.symos.netswitch.app-main-58:/raw/map_style_dark.json"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\mipmap-xxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\mipmap-xxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\mipmap-xxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\mipmap-xxhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\mipmap-xxxhdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\mipmap-xxxhdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\mipmap-xhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\mipmap-xhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\xml_data_extraction_rules.xml.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\xml\\data_extraction_rules.xml"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\mipmap-xxxhdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\mipmap-xxxhdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\mipmap-hdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\mipmap-hdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\drawable_ic_notification.xml.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\drawable\\ic_notification.xml"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\mipmap-mdpi_ic_launcher_round.png.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\mipmap-mdpi\\ic_launcher_round.png"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\drawable_ic_wifi.xml.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\drawable\\ic_wifi.xml"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\mipmap-mdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\mipmap-mdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\drawable_ic_launcher_background.xml.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\drawable\\ic_launcher_background.xml"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\mipmap-hdpi_ic_launcher.png.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\mipmap-hdpi\\ic_launcher.png"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\drawable_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\drawable\\ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-debug-56:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\Sym88\\.gradle\\daemon\\8.13\\com.symos.netswitch.app-main-58:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    }
+]
