@@ -1,9 +1,7 @@
-﻿import java.util.Base64
-
 plugins {
-    id("com.android.application") version "8.5.2"
-    id("org.jetbrains.kotlin.android") version "2.0.21"
-    id("org.jetbrains.kotlin.plugin.compose") version "2.0.21"
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 android {
@@ -18,32 +16,29 @@ android {
         versionName = "1.0"
     }
 
-    signingConfigs {
-        create("release") {
-            val signingKey = System.getenv("SIGNING_KEY")
-            if (signingKey != null) {
-                val keyBytes = java.util.Base64.getDecoder().decode(signingKey)
-                val keyFile = layout.buildDirectory.file("release-key.jks").get().asFile
-                keyFile.parentFile.mkdirs()
-                keyFile.writeBytes(keyBytes)
-                storeFile = keyFile
-                storePassword = System.getenv("STORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS")
-                keyPassword = System.getenv("KEY_PASSWORD")
-            }
-        }
-    }
-
     buildTypes {
         release {
-            isMinifyEnabled = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.findByName("release")
+            isMinifyEnabled = false
         }
     }
 
     buildFeatures {
         compose = true
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
     }
 }
 
