@@ -1,4 +1,4 @@
-package com.symos.netswitch.service
+package com.symdev.netswitch.service
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -10,8 +10,8 @@ import android.content.Intent
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
-import com.symos.netswitch.MainActivity
-import com.symos.netswitch.R
+import com.symdev.netswitch.MainActivity
+import com.symdev.netswitch.R
 
 class LocationMonitorService : Service() {
 

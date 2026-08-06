@@ -1,4 +1,4 @@
-package com.symos.netswitch.notification
+package com.symdev.netswitch.notification
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,8 +7,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
-import com.symos.netswitch.R
-import com.symos.netswitch.ui.SettingsRedirectActivity
+import com.symdev.netswitch.R
+import com.symdev.netswitch.ui.SettingsRedirectActivity
 
 object NotificationHelper {
 

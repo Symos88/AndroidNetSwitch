@@ -321,7 +321,7 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
 
                     // Save bar
                     val sel = ui.selected
-                    AnimatedVisibility(
+                    androidx.compose.animation.AnimatedVisibility(
                         visible = sel != null,
                         modifier = Modifier.align(Alignment.BottomCenter)
                     ) {
