@@ -1,4 +1,4 @@
-package com.symdev.netswitch.ui
+﻿package com.symdev.netswitch.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -487,8 +487,12 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
         }
     }
 
-    DisposableEffect(Unit) {
-        onDispose { mapViewRef?.onPause() }
+    DisposableEffect(mapViewRef) {
+        mapViewRef?.onResume()
+        onDispose {
+            mapViewRef?.onPause()
+            mapViewRef?.onDetach()
+        }
     }
 }
 

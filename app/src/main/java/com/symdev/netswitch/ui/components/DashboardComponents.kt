@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -93,7 +94,6 @@ fun StatCard(
     }
 }
 
-/** Decorative telemetry line, echoing the dashboard header. */
 @Composable
 fun WaveLine(modifier: Modifier = Modifier) {
     Canvas(modifier.fillMaxWidth().height(26.dp)) {
@@ -115,6 +115,7 @@ fun AppTopBar() {
     Row(
         Modifier
             .fillMaxWidth()
+            .statusBarsPadding()
             .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
