@@ -10,3 +10,8 @@
 .cxx
 *.apk
 *.aab
+
+# Build output
+app/build/
+build/
+.gradle/
