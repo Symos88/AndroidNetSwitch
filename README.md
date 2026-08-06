@@ -1,9 +1,4 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
-# NetSwitch
-=======
 # 📡 NetSwitch
->>>>>>> 574417521643f689f8fd46ab2503079bf9be24f5
 
 > **Smart network switching based on location.**
 > An Android app that monitors your geofence and prompts you to toggle Wi-Fi/Mobile Data when arriving home or leaving—no Google account or API key required.
@@ -51,91 +46,6 @@ This project uses GitHub Actions to build the APK. Follow these steps to generat
 ### 1. Push to GitHub
 Create a new **private** repository and push this folder:
 
-<<<<<<< HEAD
-- Package name: `com.symdev.netswitch` (`app/build.gradle.kts` and the manifest).
-- Default geofence radius: 150 m, adjustable 50–500 m from the radius slider.
-- Notification text / behavior: `app/src/main/java/com/symdev/netswitch/notifications/NotificationHelper.kt`.
-- Colors / fonts: `app/src/main/java/com/symdev/netswitch/ui/theme/`.
-=======
-# NetSwitch 📶
-
-An Android geofence-based reminder that alerts you when you arrive home to switch to Wi‑Fi and turn off mobile data.
-
-## ✨ Features
-
-- 🗺️ Tap-to-set home location with Google Maps
-- 📏 Adjustable geofence radius (50–500 m) with live visualization
-- 🔔 High-priority notifications with one-tap action buttons
-- 🌙 Background monitoring with foreground service
-- 💾 DataStore persistence for home coordinates and settings
-- 🎨 Modern Material 3 dark theme UI
-
-## 📱 Requirements
-
-- Android 8.0 (API 26) or higher
-- Google Play Services (for Maps & Location)
-- Google Maps API key
-
-## 🛠️ Build Instructions
-
-### Prerequisites
-
-| Tool | Version | Notes |
-|------|---------|-------|
-| **Android Studio** | Hedgehog 2023.1.1+ | [Download](https://developer.android.com/studio) |
-| **JDK** | 17 | Bundled with Android Studio |
-| **Gradle** | 8.2 | Managed via wrapper (auto-downloaded) |
-| **Android SDK** | API 34 | Install via SDK Manager |
-
-## Setup
-
-1. **Clone**
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/NetSwitch.git
-   cd NetSwitch
-   ```
-
-2. **Add your Google Maps API key**
-   - Open `app/src/main/res/values/strings.xml`
-   - Replace `YOUR_API_KEY_HERE` with your [Maps SDK API key](https://developers.google.com/maps/documentation/android-sdk/get-api-key)
-
-3. **Build**
-   ```bash
-   ./gradlew assembleDebug
-   ```
-
-4. **Install**
-   ```bash
-   adb install app/build/outputs/apk/debug/app-debug.apk
-   ```
-
-## Permissions
-
-| Permission | Why |
-|------------|-----|
-| `ACCESS_FINE_LOCATION` | Precise geofence boundary |
-| `ACCESS_BACKGROUND_LOCATION` | Geofence works when app is closed |
-| `POST_NOTIFICATIONS` | Arrival alert (Android 13+) |
-| `FOREGROUND_SERVICE_LOCATION` | Keep monitoring alive |
-
-## Architecture
-
-```
-MainActivity
- └── NetSwitchScreen (Compose)
-      ├── HomeViewModel
-      │    ├── PreferencesManager (DataStore)
-      │    ├── GeofenceManager
-      │    └── LocationMonitorService
-      ├── GoogleMap (maps-compose)
-      └── StatCards / Slider / PermissionChips
-```
-
-## License
-
-MIT — see [LICENSE](LICENSE).
->>>>>>> 4796efa6d360366945c93e5b3f35e036dc81a035
-=======
 ```powershell
 git init
 git add .
@@ -197,15 +107,3 @@ git push -u origin main
 <div align="center">
   <sub>Built with ❤️ using Kotlin & Jetpack Compose</sub>
 </div>
-
-### Key Improvements Made:
-1.  **Visual Hierarchy:** Added badges, emojis, and section dividers to break up walls of text.
-2.  **Callout Blocks:** Used GitHub's `> [!NOTE]` and `> [!TIP]` syntax to highlight the Android 10 limitation and the HyperOS battery optimization warning—these are the two most critical pieces of information users miss.
-3.  **Tables:** Converted the project layout and technical specs into clean tables for faster scanning.
-4.  **Code Blocks:** Formatted the git commands as PowerShell code blocks with proper syntax highlighting.
-5.  **Scannable Headings:** Changed generic headings like "Changing things later" to descriptive ones like "Customization Reference".
-6.  **Badge Shield:** Added dynamic shields for tech stack visibility at the top.
-7.  **Centered Footer:** Added a subtle centered footer for a polished finish.
-
-This README now follows modern open-source conventions while preserving every technical detail and warning from your original draft.
->>>>>>> 574417521643f689f8fd46ab2503079bf9be24f5
