@@ -1,5 +1,4 @@
 *.iml
-<<<<<<< HEAD
 .gradle/
 /local.properties
 .idea/
@@ -11,19 +10,3 @@
 .cxx
 *.apk
 *.aab
-=======
-.gradle
-/local.properties
-/.idea/caches
-/.idea/libraries
-/.idea/modules.xml
-/.idea/workspace.xml
-/.idea/navEditor.xml
-/.idea/assetWizardSettings.xml
-.DS_Store
-/build
-captures
-.externalNativeBuild
-.cxx
-local.properties
->>>>>>> 4796efa6d360366945c93e5b3f35e036dc81a035
