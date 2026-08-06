@@ -1,10 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-<<<<<<< HEAD
     <style name="Theme.NetSwitch" parent="android:Theme.Material.NoActionBar">
         <item name="android:windowBackground">@color/background_dark</item>
         <item name="android:statusBarColor">@color/background_dark</item>
     </style>
-=======
-    <style name="Theme.NetSwitch" parent="android:Theme.Material.Light.NoActionBar" />
->>>>>>> 4796efa6d360366945c93e5b3f35e036dc81a035
 </resources>
