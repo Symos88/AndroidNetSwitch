@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationCompat
 import com.google.android.gms.location.Geofence
 import com.symdev.netswitch.R
@@ -15,16 +16,26 @@ object NotificationHelper {
 
     private const val CHANNEL_ID = "geofence_alert_channel"
     private const val NOTIF_ID = 2001
+    private const val EXTRA_TARGET = "target"
 
     fun showGeofenceNotification(context: Context, transition: Int) {
+        if (transition != Geofence.GEOFENCE_TRANSITION_ENTER &&
+            transition != Geofence.GEOFENCE_TRANSITION_EXIT
+        ) return
+
         createChannel(context)
+
+        // Android 13+ can block notifications at runtime. A geofence event can
+        // arrive while the app UI is not running, so never attempt to post a
+        // notification when the app is not allowed to notify.
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
 
         val isArrival = transition == Geofence.GEOFENCE_TRANSITION_ENTER
         val wifiIntent = Intent(context, SettingsRedirectActivity::class.java).apply {
-            putExtra("target", "wifi")
+            putExtra(EXTRA_TARGET, "wifi")
         }
         val dataIntent = Intent(context, SettingsRedirectActivity::class.java).apply {
-            putExtra("target", "data")
+            putExtra(EXTRA_TARGET, "data")
         }
 
         val wifiPending = PendingIntent.getActivity(
@@ -58,8 +69,7 @@ object NotificationHelper {
             .addAction(R.drawable.ic_data, "Mobile Data", dataPending)
             .build()
 
-        val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        nm.notify(NOTIF_ID, notification)
+        NotificationManagerCompat.from(context).notify(NOTIF_ID, notification)
     }
 
     private fun createChannel(context: Context) {
