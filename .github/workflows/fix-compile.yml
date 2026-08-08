@@ -1,6 +1,7 @@
 name: Apply compile fix
 on:
-  workflow_dispatch:
+  push:
+    branches: [review/fix-geofence]
 permissions:
   contents: write
 jobs:
@@ -45,5 +46,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app/src/main/java/com/symdev/netswitch/ui/NetSwitchScreen.kt
+          git diff --cached --quiet && exit 0
           git commit -m 'fix: resolve AnimatedVisibility scope compile error'
           git push origin HEAD:review/fix-geofence
