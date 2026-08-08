@@ -1,0 +1,49 @@
+name: Apply compile fix
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: review/fix-geofence
+      - name: Fix AnimatedVisibility scope
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('app/src/main/java/com/symdev/netswitch/ui/NetSwitchScreen.kt')
+          s = p.read_text(encoding='utf-8-sig')
+          old = '''                    val sel = ui.selected
+                    AnimatedVisibility(visible = sel != null, modifier = Modifier.align(Alignment.BottomCenter)) {
+                        Surface(Modifier.padding(10.dp), shape = RoundedCornerShape(12.dp), color = CardHigh.copy(alpha = 0.97f), border = BorderStroke(1.dp, Teal.copy(alpha = 0.6f))) {'''
+          new = '''                    val sel = ui.selected
+                    if (sel != null) {
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.BottomCenter) {
+                        Surface(Modifier.padding(10.dp), shape = RoundedCornerShape(12.dp), color = CardHigh.copy(alpha = 0.97f), border = BorderStroke(1.dp, Teal.copy(alpha = 0.6f))) {'''
+          if old not in s:
+              raise SystemExit('target start not found')
+          s = s.replace(old, new, 1)
+          old_end = '''                        }
+                    }
+                }
+            }'''
+          new_end = '''                        }
+                        }
+                    }
+                }
+            }'''
+          pos = s.find(old_end, s.find(new))
+          if pos < 0:
+              raise SystemExit('target end not found')
+          s = s[:pos] + new_end + s[pos+len(old_end):]
+          p.write_text(s, encoding='utf-8')
+          PY
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/src/main/java/com/symdev/netswitch/ui/NetSwitchScreen.kt
+          git commit -m 'fix: resolve AnimatedVisibility scope compile error'
+          git push origin HEAD:review/fix-geofence
