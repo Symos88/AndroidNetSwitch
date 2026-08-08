@@ -94,11 +94,9 @@ import org.osmdroid.views.overlay.TilesOverlay
 import java.io.File
 import kotlin.math.roundToInt
 
-private fun android.content.Context.has(p: String) =
-    ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
+private fun android.content.Context.has(p: String) = ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
 
-private fun Float.formatDistance(): String =
-    if (this < 1000) "${roundToInt()} m" else String.format("%.2f km", this / 1000)
+private fun Float.formatDistance(): String = if (this < 1000) "${roundToInt()} m" else String.format("%.2f km", this / 1000)
 
 @Composable
 fun NetSwitchScreen(viewModel: HomeViewModel) {
@@ -108,12 +106,9 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // ── Permission state ────────────────────────────────────────────────
     var fineGranted by remember { mutableStateOf(context.has(Manifest.permission.ACCESS_FINE_LOCATION)) }
     var bgGranted by remember { mutableStateOf(context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) }
-    var notifGranted by remember {
-        mutableStateOf(Build.VERSION.SDK_INT < 33 || context.has(Manifest.permission.POST_NOTIFICATIONS))
-    }
+    var notifGranted by remember { mutableStateOf(Build.VERSION.SDK_INT < 33 || context.has(Manifest.permission.POST_NOTIFICATIONS)) }
     fun refresh() {
         fineGranted = context.has(Manifest.permission.ACCESS_FINE_LOCATION)
         bgGranted = context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
@@ -122,15 +117,10 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
 
     var pendingEnable by remember { mutableStateOf(false) }
 
-    // ── Permission launchers ──────────────────────────────────────────────
-    val notifLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { refresh() }
+    val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refresh() }
 
     fun finishEnable() {
-        if (Build.VERSION.SDK_INT >= 33 && !notifGranted) {
-            notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
+        if (Build.VERSION.SDK_INT >= 33 && !notifGranted) notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         pendingEnable = false
         viewModel.enableMonitoring(
             onError = { m -> scope.launch { snackbar.showSnackbar(m) } },
@@ -138,26 +128,20 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
         )
     }
 
-    val bgLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
+    val bgLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         refresh()
         if (pendingEnable) {
-            if (!granted) {
-                scope.launch { snackbar.showSnackbar("All-time location denied - alerts may be delayed") }
-            }
+            if (!granted) scope.launch { snackbar.showSnackbar("All-time location denied - alerts may be delayed") }
             finishEnable()
         }
     }
 
-    val locationLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { results ->
+    val locationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
         refresh()
         if (pendingEnable) {
-            val fineResult = results[Manifest.permission.ACCESS_FINE_LOCATION] == true || fineGranted
+            val fineResult = results[Manifest.permission.ACCESS_FINE_LOCATION] == true || context.has(Manifest.permission.ACCESS_FINE_LOCATION)
             if (fineResult) {
-                if (Build.VERSION.SDK_INT >= 29 && !bgGranted) {
+                if (Build.VERSION.SDK_INT >= 29 && !context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
                     bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                 } else {
                     finishEnable()
@@ -172,16 +156,12 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
     fun beginEnable() {
         pendingEnable = true
         when {
-            !fineGranted -> locationLauncher.launch(
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-            )
-            Build.VERSION.SDK_INT >= 29 && !bgGranted ->
-                bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            !fineGranted -> locationLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+            Build.VERSION.SDK_INT >= 29 && !bgGranted -> bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
             else -> finishEnable()
         }
     }
 
-    // Refresh permissions + distance on every resume
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -194,28 +174,150 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // ── Map state ───────────────────────────────────────────────────────
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        snackbarHost = { SnackbarHost(snackbar) },
-        topBar = { AppTopBar() }
-    ) { pad ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(pad)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-
-            // ── Hero status card ─────────────────────────────────────────
-            Surface(
-                shape = RoundedCornerShape(16.dp), color = Card,
-                border = BorderStroke(1.dp, Line)
-            ) {
+    Scaffold(containerColor = MaterialTheme.colorScheme.background, snackbarHost = { SnackbarHost(snackbar) }, topBar = { AppTopBar() }) { pad ->
+        Column(Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Surface(shape = RoundedCornerShape(16.dp), color = Card, border = BorderStroke(1.dp, Line)) {
                 Column(Modifier.padding(18.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
+                            SectionLabel("GEOFENCE RADIUS")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text("${ui.radius}", style = MaterialTheme.typography.displayLarge, color = Teal)
+                                Text(" m", style = MaterialTheme.typography.titleMedium, color = TextDim)
+                            }
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                PulseIndicator(ui.monitoring)
+                                Text(if (ui.monitoring) "ACTIVE" else "INACTIVE", style = MaterialTheme.typography.titleMedium, color = if (ui.monitoring) Teal else Orange)
+                            }
+                            SectionLabel("MONITORING")
+                        }
+                    }
+                    Spacer(Modifier.height(10.dp)); WaveLine()
+                }
+            }
+
+            Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                StatCard("HOME", if (ui.home != null) "SET" else "-", ui.home?.let { String.format("%.4f, %.4f", it.latitude, it.longitude) } ?: "tap the map below", if (ui.home != null) Teal else Orange, Modifier.weight(1f))
+                StatCard("DISTANCE", distance?.formatDistance() ?: "-", "from home", Cyan, Modifier.weight(1f))
+                StatCard("STATE", if (ui.monitoring) "ARMED" else "OFF", if (ui.monitoring) "geofence live" else "standby", if (ui.monitoring) Teal else Pink, Modifier.weight(1f))
+            }
+
+            Surface(shape = RoundedCornerShape(16.dp), color = Card, border = BorderStroke(1.dp, Line)) {
+                Box(Modifier.height(340.dp)) {
+                    AndroidView(modifier = Modifier.matchParentSize(), factory = { ctx ->
+                        configureOsmdroid(ctx)
+                        MapView(ctx).apply {
+                            setTileSource(TileSourceFactory.MAPNIK); setMultiTouchControls(true); overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
+                            val start = (ui.home ?: ui.selected)?.let { GeoPoint(it.latitude, it.longitude) } ?: GeoPoint(47.4979, 19.0402)
+                            controller.setZoom(if (ui.home != null) 16.0 else 11.0); controller.setCenter(start)
+                            val receiver = object : MapEventsReceiver {
+                                override fun singleTapConfirmedHelper(p: GeoPoint): Boolean { viewModel.selectLocation(p.latitude, p.longitude); return true }
+                                override fun longPressHelper(p: GeoPoint): Boolean = false
+                            }
+                            overlays.add(0, MapEventsOverlay(receiver)); mapViewRef = this; refreshHomeOverlay(ui.selected ?: ui.home, ui.radius.toDouble())
+                        }
+                    }, update = { view -> view.refreshHomeOverlay(ui.selected ?: ui.home, ui.radius.toDouble()) })
+                    if (ui.home == null && ui.selected == null) {
+                        Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
+                            Text("TAP THE MAP TO DROP YOUR HOME MARKER", style = MaterialTheme.typography.labelSmall, color = TextMain, modifier = Modifier.background(CardHigh.copy(alpha = 0.9f), RoundedCornerShape(8.dp)).padding(12.dp))
+                        }
+                    }
+                    val sel = ui.selected
+                    AnimatedVisibility(visible = sel != null, modifier = Modifier.align(Alignment.BottomCenter)) {
+                        Surface(Modifier.padding(10.dp), shape = RoundedCornerShape(12.dp), color = CardHigh.copy(alpha = 0.97f), border = BorderStroke(1.dp, Teal.copy(alpha = 0.6f))) {
+                            Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Icon(Icons.Rounded.LocationOn, null, tint = Pink, modifier = Modifier.size(20.dp))
+                                Column(Modifier.weight(1f)) {
+                                    SectionLabel("NEW HOME")
+                                    Text(sel?.let { String.format("%.5f, %.5f", it.latitude, it.longitude) } ?: "", style = MaterialTheme.typography.titleMedium, color = TextMain)
+                                }
+                                IconButton(onClick = viewModel::clearSelection) { Icon(Icons.Rounded.Close, "Cancel", tint = TextDim) }
+                                Button(onClick = { viewModel.saveSelection { scope.launch { snackbar.showSnackbar("Home saved") } } }, colors = ButtonDefaults.buttonColors(containerColor = Teal, contentColor = TealDark)) { Text("SAVE") }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Surface(shape = RoundedCornerShape(16.dp), color = Card, border = BorderStroke(1.dp, Line)) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { SectionLabel("GEOFENCE RADIUS"); Spacer(Modifier.weight(1f)); Text("${ui.radius} m", style = MaterialTheme.typography.titleMedium, color = Teal) }
+                    Slider(value = ui.radius.toFloat(), onValueChange = { viewModel.onRadiusChanged(it.roundToInt()) }, onValueChangeFinished = viewModel::onRadiusChangeFinished, valueRange = 50f..500f, steps = 8, colors = SliderDefaults.colors(thumbColor = Teal, activeTrackColor = Teal, inactiveTrackColor = CardHigh))
+                    Row(Modifier.fillMaxWidth()) { Text("50 m", style = MaterialTheme.typography.labelSmall, color = TextDim); Spacer(Modifier.weight(1f)); Text("500 m", style = MaterialTheme.typography.labelSmall, color = TextDim) }
+                    Text("The circle on the map updates live.", style = MaterialTheme.typography.bodySmall, color = TextDim)
+                }
+            }
+
+            Surface(shape = RoundedCornerShape(16.dp), color = Card, border = BorderStroke(1.dp, Line)) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) { SectionLabel("MONITORING"); Text(if (ui.monitoring) "Watching for your arrival" else "Geofence is disarmed", style = MaterialTheme.typography.bodyMedium, color = TextDim) }
+                        Switch(checked = ui.monitoring, onCheckedChange = { enabled ->
+                            if (!enabled) { viewModel.disableMonitoring(); scope.launch { snackbar.showSnackbar("Monitoring stopped") } }
+                            else if (ui.home == null) scope.launch { snackbar.showSnackbar("Set your home location first") }
+                            else beginEnable()
+                        }, colors = SwitchDefaults.colors(checkedTrackColor = Teal, checkedThumbColor = TealDark, uncheckedTrackColor = CardHigh))
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        PermissionChip("LOCATION", fineGranted) { locationLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) }
+                        PermissionChip("ALL-TIME", bgGranted) { if (Build.VERSION.SDK_INT >= 29) { scope.launch { snackbar.showSnackbar("Choose \"Allow all the time\"") }; context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(Uri.parse("package:${context.packageName}"))) } }
+                        PermissionChip("NOTIFICATIONS", notifGranted) { if (Build.VERSION.SDK_INT >= 33) notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    Text("HyperOS/MIUI: allow Autostart and remove battery limits for NetSwitch so background alerts keep working.", style = MaterialTheme.typography.bodySmall, color = Orange.copy(alpha = 0.85f))
+                }
+            }
+
+            Surface(shape = RoundedCornerShape(16.dp), color = Card, border = BorderStroke(1.dp, Line)) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    SectionLabel("HOW IT WORKS")
+                    FlowItem(Icons.Rounded.LocationOn, Teal, "1 - A geofence watches your home zone in the background.")
+                    FlowItem(Icons.Rounded.NotificationsActive, Orange, "2 - On arrival or departure you get a high-priority alert.")
+                    FlowItem(Icons.Rounded.Wifi, Pink, "3 - One tap opens the Wi-Fi / mobile-data panel.")
+                }
+            }
+            Text("Geofence-based Wi-Fi reminder · all data stays on device", style = MaterialTheme.typography.labelSmall, color = TextDim, modifier = Modifier.padding(vertical = 4.dp))
+        }
+    }
+
+    DisposableEffect(mapViewRef) {
+        mapViewRef?.onResume()
+        onDispose { mapViewRef?.onPause(); mapViewRef?.onDetach() }
+    }
+}
+
+private fun configureOsmdroid(context: android.content.Context) {
+    val prefs = context.getSharedPreferences("osmdroid_prefs", android.content.Context.MODE_PRIVATE)
+    val config = Configuration.getInstance(); config.load(context, prefs); config.userAgentValue = context.packageName
+    val basePath = File(context.filesDir, "osmdroid"); config.osmdroidBasePath = basePath; config.osmdroidTileCache = File(basePath, "tiles")
+}
+
+private fun MapView.refreshHomeOverlay(anchor: com.symdev.netswitch.data.HomeLocation?, radiusMeters: Double) {
+    while (overlays.size > 1) overlays.removeAt(overlays.size - 1)
+    if (anchor != null) {
+        val point = GeoPoint(anchor.latitude, anchor.longitude)
+        val circle = Polygon(this); circle.points = Polygon.pointsAsCircle(point, radiusMeters); circle.fillColor = 0x263BE8C8; circle.strokeColor = 0xFF3BE8C8.toInt(); circle.strokeWidth = 3f; overlays.add(circle)
+        val marker = Marker(this); marker.position = point; marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM); overlays.add(marker)
+    }
+    invalidate()
+}
+
+@Composable
+private fun FlowItem(icon: ImageVector, tint: Color, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp)); Text(text, style = MaterialTheme.typography.bodyMedium, color = TextMain) }
+}
+
+@Composable
+private fun PermissionChip(label: String, granted: Boolean, onClick: () -> Unit) {
+    Surface(Modifier.clickable(onClick = onClick), shape = RoundedCornerShape(8.dp), color = if (granted) TealDark else CardHigh, border = BorderStroke(1.dp, if (granted) Teal.copy(alpha = 0.5f) else Orange.copy(alpha = 0.5f))) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(if (granted) Icons.Rounded.Check else Icons.Rounded.Warning, null, Modifier.size(12.dp), tint = if (granted) Teal else Orange)
+            Text(label, style = MaterialTheme.typography.labelSmall, color = if (granted) Teal else Orange)
+        }
+    }
+}
