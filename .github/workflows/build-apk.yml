@@ -1,4 +1,4 @@
-name: Build Release APK
+name: Build APK
 
 on:
   push:
@@ -24,9 +24,13 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Debug APK (PRs and pushes)
+      - name: Build Debug APK (PRs, pushes, and manual runs)
         if: github.ref_type != 'tag'
         run: ./gradlew assembleDebug --no-daemon
+
+      - name: Run unit tests (PRs, pushes, and manual runs)
+        if: github.ref_type != 'tag'
+        run: ./gradlew testDebugUnitTest --no-daemon
 
       - name: Upload Debug APK
         if: github.ref_type != 'tag'
@@ -36,14 +40,40 @@ jobs:
           path: app/build/outputs/apk/debug/app-debug.apk
           retention-days: 90
 
-      - name: Build Signed Release APK (on tags)
+      - name: Validate release signing secrets
         if: github.ref_type == 'tag'
         env:
           SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
           STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in SIGNING_KEY KEY_ALIAS KEY_PASSWORD STORE_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "Missing required GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+          mkdir -p signing
+          printf '%s' "$SIGNING_KEY" | base64 --decode > signing/release.jks
+          test -s signing/release.jks
+
+      - name: Build Signed Release APK (on tags)
+        if: github.ref_type == 'tag'
+        env:
+          SIGNING_KEY: ${{ secrets.SIGNING_KEY }}
+          SIGNING_STORE_FILE: signing/release.jks
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
         run: ./gradlew assembleRelease --no-daemon
+
+      - name: Verify release APK signature
+        if: github.ref_type == 'tag'
+        run: |
+          set -euo pipefail
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose app/build/outputs/apk/release/app-release.apk
 
       - name: Create GitHub Release
         if: github.ref_type == 'tag'
