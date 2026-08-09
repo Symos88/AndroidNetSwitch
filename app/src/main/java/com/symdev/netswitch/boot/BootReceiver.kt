@@ -20,18 +20,16 @@ class BootReceiver : BroadcastReceiver() {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
 
         val pendingResult = goAsync()
+        val appContext = context.applicationContext
+        val prefs = PreferencesManager(appContext)
+
         CoroutineScope(Dispatchers.IO).launch {
-            val appContext = context.applicationContext
             try {
-                val prefs = PreferencesManager(appContext)
                 val home = prefs.homeLocation.first()
                 val monitoring = prefs.monitoringActive.first()
                 val radius = prefs.radius.first()
 
-                if (!monitoring || home == null) {
-                    pendingResult.finish()
-                    return@launch
-                }
+                if (!monitoring || home == null) return@launch
 
                 val fineGranted = ContextCompat.checkSelfPermission(
                     appContext,
@@ -46,7 +44,6 @@ class BootReceiver : BroadcastReceiver() {
 
                 if (!fineGranted || !backgroundGranted) {
                     prefs.setMonitoring(false)
-                    pendingResult.finish()
                     return@launch
                 }
 
@@ -59,12 +56,12 @@ class BootReceiver : BroadcastReceiver() {
                         }
                     }
                 }
+                return@launch
             } catch (_: Exception) {
-                try {
-                    prefs.setMonitoring(false)
-                } finally {
-                    pendingResult.finish()
-                }
+                prefs.setMonitoring(false)
+            } finally {
+                // If addGeofences succeeded, its callback owns finish().
+                // All synchronous/error paths finish here.
             }
         }
     }
