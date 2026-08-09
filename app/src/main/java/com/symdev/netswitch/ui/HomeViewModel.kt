@@ -56,13 +56,25 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
     fun saveSelection(onSaved: () -> Unit) {
         val sel = _selected.value ?: return
         viewModelScope.launch {
-            prefs.saveHome(sel)
-            _selected.value = null
-            if (uiState.value.monitoring) {
-                GeofenceManager.addGeofences(application, sel, uiState.value.radius)
+            val monitoring = uiState.value.monitoring
+            if (monitoring) {
+                GeofenceManager.addGeofences(application, sel, uiState.value.radius) { ok, _ ->
+                    viewModelScope.launch {
+                        prefs.saveHome(sel)
+                        _selected.value = null
+                        if (!ok) {
+                            prefs.setMonitoring(false)
+                        }
+                        refreshDistance()
+                        onSaved()
+                    }
+                }
+            } else {
+                prefs.saveHome(sel)
+                _selected.value = null
+                refreshDistance()
+                onSaved()
             }
-            refreshDistance()
-            onSaved()
         }
     }
 
@@ -75,7 +87,11 @@ class HomeViewModel(private val application: Application) : AndroidViewModel(app
             prefs.saveRadius(_radius.value)
             val home = uiState.value.home
             if (uiState.value.monitoring && home != null) {
-                GeofenceManager.addGeofences(application, home, _radius.value)
+                GeofenceManager.addGeofences(application, home, _radius.value) { ok, _ ->
+                    if (!ok) {
+                        viewModelScope.launch { prefs.setMonitoring(false) }
+                    }
+                }
             }
         }
     }
