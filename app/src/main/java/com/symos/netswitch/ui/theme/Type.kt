@@ -6,12 +6,16 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
+private val AppFont = FontFamily.SansSerif
+
 val NetTypography = Typography(
-    displayLarge = TextStyle(FontFamily.Monospace, FontWeight.Bold, 42.sp, letterSpacing = (-1).sp),
-    headlineMedium = TextStyle(FontFamily.Monospace, FontWeight.Bold, 24.sp),
-    titleLarge = TextStyle(FontFamily.Monospace, FontWeight.ExtraBold, 20.sp, letterSpacing = 3.sp),
-    titleMedium = TextStyle(FontFamily.Monospace, FontWeight.SemiBold, 14.sp, letterSpacing = 1.sp),
-    labelSmall = TextStyle(FontFamily.Monospace, FontWeight.Medium, 10.sp, letterSpacing = 2.sp),
-    bodyMedium = TextStyle(fontSize = 13.sp, lineHeight = 19.sp),
-    bodySmall = TextStyle(fontSize = 11.sp, lineHeight = 16.sp)
+    displayLarge = TextStyle(AppFont, FontWeight.Bold, 42.sp, letterSpacing = (-1.2).sp),
+    headlineMedium = TextStyle(AppFont, FontWeight.Bold, 24.sp, letterSpacing = (-0.3).sp),
+    headlineSmall = TextStyle(AppFont, FontWeight.Bold, 21.sp, letterSpacing = (-0.2).sp),
+    titleLarge = TextStyle(AppFont, FontWeight.Bold, 20.sp, letterSpacing = 0.2.sp),
+    titleMedium = TextStyle(AppFont, FontWeight.SemiBold, 15.sp, letterSpacing = 0.1.sp),
+    labelMedium = TextStyle(AppFont, FontWeight.SemiBold, 11.sp, letterSpacing = 0.7.sp),
+    labelSmall = TextStyle(AppFont, FontWeight.SemiBold, 10.sp, letterSpacing = 1.1.sp),
+    bodyMedium = TextStyle(AppFont, FontWeight.Normal, 14.sp, lineHeight = 20.sp),
+    bodySmall = TextStyle(AppFont, FontWeight.Normal, 12.sp, lineHeight = 17.sp)
 )
