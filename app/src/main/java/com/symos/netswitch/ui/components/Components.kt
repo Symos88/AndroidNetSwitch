@@ -1,6 +1,8 @@
 package com.symos.netswitch.ui.components
 
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -46,7 +49,12 @@ import kotlin.math.sin
 
 @Composable
 fun SectionLabel(text: String, modifier: Modifier = Modifier, color: Color = TextDim) {
-    Text(text, style = MaterialTheme.typography.labelSmall, color = color, modifier = modifier)
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall,
+        color = color,
+        modifier = modifier
+    )
 }
 
 @Composable
@@ -55,27 +63,36 @@ fun PulseIndicator(active: Boolean) {
     val alpha by transition.animateFloat(
         initialValue = 1f,
         targetValue = 0.3f,
-        animationSpec = infiniteRepeatable(tween(1100), RepeatMode.Reverse),
+        animationSpec = infiniteRepeatable(
+            tween(1100, easing = FastOutSlowInEasing),
+            RepeatMode.Reverse
+        ),
         label = "pulseAlpha"
     )
     val color = if (active) Teal else Orange
     Box(
         Modifier
-            .size(9.dp)
+            .size(8.dp)
             .alpha(if (active) alpha else 1f)
             .background(color, CircleShape)
     )
 }
 
 @Composable
-fun StatCard(label: String, value: String, caption: String, accent: Color, modifier: Modifier = Modifier) {
+fun StatCard(
+    label: String,
+    value: String,
+    caption: String,
+    accent: Color,
+    modifier: Modifier = Modifier
+) {
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(20.dp),
         color = Card,
         border = androidx.compose.foundation.BorderStroke(1.dp, Line)
     ) {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.padding(15.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val icon = when (label) {
                     "HOME" -> Icons.Rounded.Home
@@ -83,27 +100,44 @@ fun StatCard(label: String, value: String, caption: String, accent: Color, modif
                     else -> if (value == "ARMED") Icons.Rounded.CheckCircle else Icons.Rounded.RadioButtonUnchecked
                 }
                 Box(
-                    Modifier.size(34.dp).background(accent.copy(alpha = .12f), CircleShape),
+                    Modifier
+                        .size(32.dp)
+                        .background(accent.copy(alpha = .11f), CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
-                    androidx.compose.material3.Icon(icon, null, tint = accent, modifier = Modifier.size(18.dp))
+                    Icon(icon, null, tint = accent, modifier = Modifier.size(17.dp))
                 }
-                Spacer(Modifier.width(9.dp))
+                Spacer(Modifier.width(8.dp))
                 SectionLabel(label)
             }
-            Spacer(Modifier.height(12.dp))
-            Text(value, style = MaterialTheme.typography.headlineMedium, color = TextMain)
-            Spacer(Modifier.height(4.dp))
-            Text(caption, style = MaterialTheme.typography.bodySmall, color = TextDim, maxLines = 2)
-            Spacer(Modifier.height(12.dp))
-            Box(Modifier.fillMaxWidth().height(3.dp).background(accent.copy(alpha = .75f), RoundedCornerShape(50)))
+            Spacer(Modifier.height(11.dp))
+            Text(
+                value,
+                style = MaterialTheme.typography.headlineSmall,
+                color = TextMain,
+                maxLines = 1
+            )
+            Spacer(Modifier.height(3.dp))
+            Text(
+                caption,
+                style = MaterialTheme.typography.bodySmall,
+                color = TextDim,
+                maxLines = 2
+            )
+            Spacer(Modifier.height(11.dp))
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(3.dp)
+                    .background(accent.copy(alpha = .7f), RoundedCornerShape(50))
+            )
         }
     }
 }
 
 @Composable
 fun WaveLine(modifier: Modifier = Modifier) {
-    Canvas(modifier.fillMaxWidth().height(20.dp)) {
+    Canvas(modifier.fillMaxWidth().height(18.dp)) {
         val path = Path()
         val mid = size.height / 2
         path.moveTo(0f, mid)
@@ -113,28 +147,44 @@ fun WaveLine(modifier: Modifier = Modifier) {
             path.lineTo(x, y)
             x += 3f
         }
-        drawPath(path, Teal.copy(alpha = 0.55f), style = Stroke(width = 2f))
+        drawPath(path, Teal.copy(alpha = 0.48f), style = Stroke(width = 2f))
     }
 }
 
 @Composable
 fun AppTopBar() {
     Row(
-        Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp),
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 13.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
-            Text("NETSWITCH", style = MaterialTheme.typography.titleLarge, color = TextMain)
-            Box(
-                Modifier.padding(top = 5.dp).width(42.dp).height(3.dp)
-                    .background(Teal, RoundedCornerShape(50))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    Modifier
+                        .size(9.dp)
+                        .background(Teal, CircleShape)
+                )
+                Spacer(Modifier.width(9.dp))
+                Text(
+                    "NETSWITCH",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = TextMain
+                )
+            }
+            Text(
+                "LOCATION AUTOMATION",
+                style = MaterialTheme.typography.labelSmall,
+                color = TextDim,
+                modifier = Modifier.padding(start = 18.dp, top = 2.dp)
             )
         }
         Spacer(Modifier.weight(1f))
         Surface(
             shape = RoundedCornerShape(50),
-            color = Teal.copy(alpha = .10f),
-            border = androidx.compose.foundation.BorderStroke(1.dp, Teal.copy(alpha = .22f))
+            color = Teal.copy(alpha = .09f),
+            border = androidx.compose.foundation.BorderStroke(1.dp, Teal.copy(alpha = .2f))
         ) {
             Row(
                 Modifier.padding(horizontal = 11.dp, vertical = 7.dp),
@@ -142,7 +192,11 @@ fun AppTopBar() {
             ) {
                 PulseIndicator(true)
                 Spacer(Modifier.width(7.dp))
-                Text("GEOFENCE", style = MaterialTheme.typography.labelSmall, color = Teal)
+                Text(
+                    "GEOFENCE",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Teal
+                )
             }
         }
     }
