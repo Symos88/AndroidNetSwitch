@@ -16,9 +16,24 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        val signingKey = System.getenv("SIGNING_KEY")
+        if (!signingKey.isNullOrBlank()) {
+            create("release") {
+                storeFile = file(System.getenv("SIGNING_STORE_FILE") ?: "signing/release.jks")
+                storePassword = System.getenv("STORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            if (!System.getenv("SIGNING_KEY").isNullOrBlank()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
@@ -67,6 +82,8 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-location:21.1.0")
     implementation("org.osmdroid:osmdroid-android:6.1.20")
+
+    testImplementation("junit:junit:4.13.2")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
