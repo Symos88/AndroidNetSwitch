@@ -116,10 +116,26 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
 
     var pendingEnable by remember { mutableStateOf(false) }
 
-    val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { refresh() }
+    val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        refresh()
+        if (pendingEnable) {
+            pendingEnable = false
+            if (!granted && Build.VERSION.SDK_INT >= 33) {
+                scope.launch { snackbar.showSnackbar("Notifications denied - monitoring was not started") }
+            } else {
+                viewModel.enableMonitoring(
+                    onError = { m -> scope.launch { snackbar.showSnackbar(m) } },
+                    onSuccess = { scope.launch { snackbar.showSnackbar("Monitoring armed") } }
+                )
+            }
+        }
+    }
 
     fun finishEnable() {
-        if (Build.VERSION.SDK_INT >= 33 && !notifGranted) notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        if (Build.VERSION.SDK_INT >= 33 && !notifGranted) {
+            notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            return
+        }
         pendingEnable = false
         viewModel.enableMonitoring(
             onError = { m -> scope.launch { snackbar.showSnackbar(m) } },
@@ -303,22 +319,25 @@ private fun MapView.refreshHomeOverlay(anchor: com.symdev.netswitch.data.HomeLoc
     if (anchor != null) {
         val point = GeoPoint(anchor.latitude, anchor.longitude)
         val circle = Polygon(this); circle.points = Polygon.pointsAsCircle(point, radiusMeters); circle.fillColor = 0x263BE8C8; circle.strokeColor = 0xFF3BE8C8.toInt(); circle.strokeWidth = 3f; overlays.add(circle)
-        val marker = Marker(this); marker.position = point; marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM); overlays.add(marker)
+        val marker = Marker(this); marker.position = point; marker.title = "Home"; marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM); overlays.add(marker)
     }
     invalidate()
 }
 
 @Composable
-private fun FlowItem(icon: ImageVector, tint: Color, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) { Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp)); Text(text, style = MaterialTheme.typography.bodyMedium, color = TextMain) }
+private fun PermissionChip(label: String, granted: Boolean, onClick: () -> Unit) {
+    Surface(modifier = Modifier.clickable(onClick = onClick), shape = RoundedCornerShape(10.dp), color = if (granted) Teal.copy(alpha = 0.12f) else Orange.copy(alpha = 0.12f), border = BorderStroke(1.dp, if (granted) Teal.copy(alpha = 0.45f) else Orange.copy(alpha = 0.45f))) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(if (granted) Icons.Rounded.Check else Icons.Rounded.Warning, null, tint = if (granted) Teal else Orange, modifier = Modifier.size(16.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall, color = TextMain)
+        }
+    }
 }
 
 @Composable
-private fun PermissionChip(label: String, granted: Boolean, onClick: () -> Unit) {
-    Surface(Modifier.clickable(onClick = onClick), shape = RoundedCornerShape(8.dp), color = if (granted) TealDark else CardHigh, border = BorderStroke(1.dp, if (granted) Teal.copy(alpha = 0.5f) else Orange.copy(alpha = 0.5f))) {
-        Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(if (granted) Icons.Rounded.Check else Icons.Rounded.Warning, null, Modifier.size(12.dp), tint = if (granted) Teal else Orange)
-            Text(label, style = MaterialTheme.typography.labelSmall, color = if (granted) Teal else Orange)
-        }
+private fun FlowItem(icon: ImageVector, tint: Color, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp))
+        Text(text, style = MaterialTheme.typography.bodySmall, color = TextDim)
     }
 }
