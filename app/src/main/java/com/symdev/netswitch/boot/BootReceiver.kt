@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.content.ContextCompat
 import com.symdev.netswitch.data.PreferencesManager
 import com.symdev.netswitch.geofence.GeofenceManager
@@ -33,16 +34,25 @@ class BootReceiver : BroadcastReceiver() {
                     appContext,
                     Manifest.permission.ACCESS_FINE_LOCATION
                 ) == PackageManager.PERMISSION_GRANTED
-                val backgroundGranted = ContextCompat.checkSelfPermission(
-                    appContext,
-                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                ) == PackageManager.PERMISSION_GRANTED
 
-                // Permissions can be revoked while the app is not running.
-                // Never let the reboot receiver call the location API without
-                // the required permissions; the UI can recover on next launch.
+                val backgroundGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
+                    ContextCompat.checkSelfPermission(
+                        appContext,
+                        Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                    ) == PackageManager.PERMISSION_GRANTED
+
                 if (fineGranted && backgroundGranted) {
-                    GeofenceManager.addGeofences(appContext, home, radius)
+                    GeofenceManager.addGeofences(appContext, home, radius) { ok, _ ->
+                        if (!ok) {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                prefs.setMonitoring(false)
+                            }
+                        }
+                    }
+                } else {
+                    // Permissions may have been revoked while the app was stopped.
+                    // Do not leave the persisted state claiming that monitoring is live.
+                    prefs.setMonitoring(false)
                 }
             } finally {
                 pendingResult.finish()
