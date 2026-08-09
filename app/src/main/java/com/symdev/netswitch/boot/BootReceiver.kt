@@ -24,6 +24,7 @@ class BootReceiver : BroadcastReceiver() {
         val prefs = PreferencesManager(appContext)
 
         CoroutineScope(Dispatchers.IO).launch {
+            var callbackOwnsResult = false
             try {
                 val home = prefs.homeLocation.first()
                 val monitoring = prefs.monitoringActive.first()
@@ -56,12 +57,11 @@ class BootReceiver : BroadcastReceiver() {
                         }
                     }
                 }
-                return@launch
+                callbackOwnsResult = true
             } catch (_: Exception) {
                 prefs.setMonitoring(false)
             } finally {
-                // If addGeofences succeeded, its callback owns finish().
-                // All synchronous/error paths finish here.
+                if (!callbackOwnsResult) pendingResult.finish()
             }
         }
     }
