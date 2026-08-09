@@ -89,7 +89,6 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polygon
-import org.osmdroid.views.overlay.TilesOverlay
 import java.io.File
 import kotlin.math.roundToInt
 
@@ -106,11 +105,11 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
     val scope = rememberCoroutineScope()
 
     var fineGranted by remember { mutableStateOf(context.has(Manifest.permission.ACCESS_FINE_LOCATION)) }
-    var bgGranted by remember { mutableStateOf(context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) }
+    var bgGranted by remember { mutableStateOf(Build.VERSION.SDK_INT < 29 || context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) }
     var notifGranted by remember { mutableStateOf(Build.VERSION.SDK_INT < 33 || context.has(Manifest.permission.POST_NOTIFICATIONS)) }
     fun refresh() {
         fineGranted = context.has(Manifest.permission.ACCESS_FINE_LOCATION)
-        bgGranted = context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        bgGranted = Build.VERSION.SDK_INT < 29 || context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         notifGranted = Build.VERSION.SDK_INT < 33 || context.has(Manifest.permission.POST_NOTIFICATIONS)
     }
 
@@ -143,10 +142,20 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
         )
     }
 
+    fun openBackgroundLocationSettings() {
+        scope.launch { snackbar.showSnackbar("Open Location and select \"Allow all the time\"") }
+        runCatching {
+            context.startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(Uri.parse("package:${context.packageName}"))
+            )
+        }
+    }
+
     val bgLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         refresh()
         if (pendingEnable) {
-            if (!granted) scope.launch { snackbar.showSnackbar("All-time location denied - alerts may be delayed") }
+            if (!granted) scope.launch { snackbar.showSnackbar("All-time location is required for reliable background alerts") }
             finishEnable()
         }
     }
@@ -156,7 +165,10 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
         if (pendingEnable) {
             val fineResult = results[Manifest.permission.ACCESS_FINE_LOCATION] == true || context.has(Manifest.permission.ACCESS_FINE_LOCATION)
             if (fineResult) {
-                if (Build.VERSION.SDK_INT >= 29 && !context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+                if (Build.VERSION.SDK_INT >= 30 && !context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+                    openBackgroundLocationSettings()
+                    pendingEnable = false
+                } else if (Build.VERSION.SDK_INT == 29 && !context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
                     bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                 } else {
                     finishEnable()
@@ -172,7 +184,11 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
         pendingEnable = true
         when {
             !fineGranted -> locationLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
-            Build.VERSION.SDK_INT >= 29 && !bgGranted -> bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            Build.VERSION.SDK_INT >= 30 && !bgGranted -> {
+                openBackgroundLocationSettings()
+                pendingEnable = false
+            }
+            Build.VERSION.SDK_INT == 29 && !bgGranted -> bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
             else -> finishEnable()
         }
     }
@@ -226,16 +242,25 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                     AndroidView(modifier = Modifier.matchParentSize(), factory = { ctx ->
                         configureOsmdroid(ctx)
                         MapView(ctx).apply {
-                            setTileSource(TileSourceFactory.MAPNIK); setMultiTouchControls(true); overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
+                            setTileSource(TileSourceFactory.MAPNIK)
+                            setUseDataConnection(true)
+                            setMultiTouchControls(true)
                             val start = (ui.home ?: ui.selected)?.let { GeoPoint(it.latitude, it.longitude) } ?: GeoPoint(47.4979, 19.0402)
-                            controller.setZoom(if (ui.home != null) 16.0 else 11.0); controller.setCenter(start)
+                            controller.setZoom(if (ui.home != null) 16.0 else 11.0)
+                            controller.setCenter(start)
                             val receiver = object : MapEventsReceiver {
                                 override fun singleTapConfirmedHelper(p: GeoPoint): Boolean { viewModel.selectLocation(p.latitude, p.longitude); return true }
                                 override fun longPressHelper(p: GeoPoint): Boolean = false
                             }
-                            overlays.add(0, MapEventsOverlay(receiver)); mapViewRef = this; refreshHomeOverlay(ui.selected ?: ui.home, ui.radius.toDouble())
+                            overlays.add(0, MapEventsOverlay(receiver))
+                            mapViewRef = this
+                            refreshHomeOverlay(ui.selected ?: ui.home, ui.radius.toDouble())
+                            onResume()
                         }
-                    }, update = { view -> view.refreshHomeOverlay(ui.selected ?: ui.home, ui.radius.toDouble()) })
+                    }, update = { view ->
+                        view.refreshHomeOverlay(ui.selected ?: ui.home, ui.radius.toDouble())
+                        view.invalidate()
+                    })
                     if (ui.home == null && ui.selected == null) {
                         Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
                             Text("TAP THE MAP TO DROP YOUR HOME MARKER", style = MaterialTheme.typography.labelSmall, color = TextMain, modifier = Modifier.background(CardHigh.copy(alpha = 0.9f), RoundedCornerShape(8.dp)).padding(12.dp))
@@ -282,11 +307,11 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         PermissionChip("LOCATION", fineGranted) { locationLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) }
-                        PermissionChip("ALL-TIME", bgGranted) { if (Build.VERSION.SDK_INT >= 29) { scope.launch { snackbar.showSnackbar("Choose \"Allow all the time\"") }; context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).setData(Uri.parse("package:${context.packageName}"))) } }
+                        PermissionChip("ALL-TIME", bgGranted) { if (Build.VERSION.SDK_INT >= 30) openBackgroundLocationSettings() else if (Build.VERSION.SDK_INT == 29) bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION) }
                         PermissionChip("NOTIFICATIONS", notifGranted) { if (Build.VERSION.SDK_INT >= 33) notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
                     }
                     Spacer(Modifier.height(10.dp))
-                    Text("HyperOS/MIUI: allow Autostart and remove battery limits for NetSwitch so background alerts keep working.", style = MaterialTheme.typography.bodySmall, color = Orange.copy(alpha = 0.85f))
+                    Text("For Android 11+ open Location in App permissions and choose Allow all the time. HyperOS/MIUI: allow Autostart and remove battery limits for NetSwitch so background alerts keep working.", style = MaterialTheme.typography.bodySmall, color = Orange.copy(alpha = 0.85f))
                 }
             }
 
@@ -310,8 +335,15 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
 
 private fun configureOsmdroid(context: android.content.Context) {
     val prefs = context.getSharedPreferences("osmdroid_prefs", android.content.Context.MODE_PRIVATE)
-    val config = Configuration.getInstance(); config.load(context, prefs); config.userAgentValue = context.packageName
-    val basePath = File(context.filesDir, "osmdroid"); config.osmdroidBasePath = basePath; config.osmdroidTileCache = File(basePath, "tiles")
+    val config = Configuration.getInstance()
+    config.load(context, prefs)
+    config.userAgentValue = context.packageName
+    val basePath = File(context.filesDir, "osmdroid")
+    val tilePath = File(basePath, "tiles")
+    basePath.mkdirs()
+    tilePath.mkdirs()
+    config.osmdroidBasePath = basePath
+    config.osmdroidTileCache = tilePath
 }
 
 private fun MapView.refreshHomeOverlay(anchor: com.symdev.netswitch.data.HomeLocation?, radiusMeters: Double) {
