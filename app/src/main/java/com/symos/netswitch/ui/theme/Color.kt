@@ -2,16 +2,17 @@ package com.symos.netswitch.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Bg       = Color(0xFF0A1315)
-val Card     = Color(0xFF0F1B1E)
-val CardHigh = Color(0xFF152528)
-val Line     = Color(0xFF24403D)
+// Deep, neutral surfaces with a restrained teal accent.
+val Bg       = Color(0xFF080D0F)
+val Card     = Color(0xFF101719)
+val CardHigh = Color(0xFF182124)
+val Line     = Color(0xFF29363A)
 
-val Teal     = Color(0xFF3BE8C8)
-val TealDark = Color(0xFF0F3B34)
-val Orange   = Color(0xFFFB9E3C)
-val Pink     = Color(0xFFF4587A)
-val Cyan     = Color(0xFF53C7F0)
+val Teal     = Color(0xFF49E6C5)
+val TealDark = Color(0xFF123D35)
+val Orange   = Color(0xFFFFB454)
+val Pink     = Color(0xFFFF6685)
+val Cyan     = Color(0xFF5CCCF0)
 
-val TextMain = Color(0xFFE8F4F1)
-val TextDim  = Color(0xFF7E9C97)
+val TextMain = Color(0xFFF0F7F5)
+val TextDim  = Color(0xFF8FA3A0)
