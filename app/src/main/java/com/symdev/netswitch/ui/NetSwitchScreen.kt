@@ -9,7 +9,6 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -90,15 +89,12 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.MapEventsOverlay
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polygon
-import org.osmdroid.views.overlay.TilesOverlay
 import java.io.File
 import kotlin.math.roundToInt
 
-private fun android.content.Context.has(p: String) =
-    ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
+private fun android.content.Context.has(p: String) = ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED
 
-private fun Float.formatDistance(): String =
-    if (this < 1000) "${roundToInt()} m" else String.format("%.2f km", this / 1000)
+private fun Float.formatDistance(): String = if (this < 1000) "${roundToInt()} m" else String.format("%.2f km", this / 1000)
 
 @Composable
 fun NetSwitchScreen(viewModel: HomeViewModel) {
@@ -108,28 +104,36 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-    // ── Permission state ────────────────────────────────────────────────
     var fineGranted by remember { mutableStateOf(context.has(Manifest.permission.ACCESS_FINE_LOCATION)) }
-    var bgGranted by remember { mutableStateOf(context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) }
-    var notifGranted by remember {
-        mutableStateOf(Build.VERSION.SDK_INT < 33 || context.has(Manifest.permission.POST_NOTIFICATIONS))
-    }
+    var bgGranted by remember { mutableStateOf(Build.VERSION.SDK_INT < 29 || context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) }
+    var notifGranted by remember { mutableStateOf(Build.VERSION.SDK_INT < 33 || context.has(Manifest.permission.POST_NOTIFICATIONS)) }
     fun refresh() {
         fineGranted = context.has(Manifest.permission.ACCESS_FINE_LOCATION)
-        bgGranted = context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        bgGranted = Build.VERSION.SDK_INT < 29 || context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
         notifGranted = Build.VERSION.SDK_INT < 33 || context.has(Manifest.permission.POST_NOTIFICATIONS)
     }
 
     var pendingEnable by remember { mutableStateOf(false) }
 
-    // ── Permission launchers ──────────────────────────────────────────────
-    val notifLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { refresh() }
+    val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        refresh()
+        if (pendingEnable) {
+            pendingEnable = false
+            if (!granted && Build.VERSION.SDK_INT >= 33) {
+                scope.launch { snackbar.showSnackbar("Notifications denied - monitoring was not started") }
+            } else {
+                viewModel.enableMonitoring(
+                    onError = { m -> scope.launch { snackbar.showSnackbar(m) } },
+                    onSuccess = { scope.launch { snackbar.showSnackbar("Monitoring armed") } }
+                )
+            }
+        }
+    }
 
     fun finishEnable() {
         if (Build.VERSION.SDK_INT >= 33 && !notifGranted) {
             notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            return
         }
         pendingEnable = false
         viewModel.enableMonitoring(
@@ -138,25 +142,33 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
         )
     }
 
-    val bgLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
+    fun openBackgroundLocationSettings() {
+        scope.launch { snackbar.showSnackbar("Open Location and select \"Allow all the time\"") }
+        runCatching {
+            context.startActivity(
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(Uri.parse("package:${context.packageName}"))
+            )
+        }
+    }
+
+    val bgLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         refresh()
         if (pendingEnable) {
-            if (!granted) {
-                scope.launch { snackbar.showSnackbar("All-time location denied - alerts may be delayed") }
-            }
+            if (!granted) scope.launch { snackbar.showSnackbar("All-time location is required for reliable background alerts") }
             finishEnable()
         }
     }
 
-    val locationLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) {
+    val locationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
         refresh()
         if (pendingEnable) {
-            if (fineGranted) {
-                if (Build.VERSION.SDK_INT >= 29 && !bgGranted) {
+            val fineResult = results[Manifest.permission.ACCESS_FINE_LOCATION] == true || context.has(Manifest.permission.ACCESS_FINE_LOCATION)
+            if (fineResult) {
+                if (Build.VERSION.SDK_INT >= 30 && !context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
+                    openBackgroundLocationSettings()
+                    pendingEnable = false
+                } else if (Build.VERSION.SDK_INT == 29 && !context.has(Manifest.permission.ACCESS_BACKGROUND_LOCATION)) {
                     bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                 } else {
                     finishEnable()
@@ -171,16 +183,16 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
     fun beginEnable() {
         pendingEnable = true
         when {
-            !fineGranted -> locationLauncher.launch(
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
-            )
-            Build.VERSION.SDK_INT >= 29 && !bgGranted ->
-                bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+            !fineGranted -> locationLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+            Build.VERSION.SDK_INT >= 30 && !bgGranted -> {
+                openBackgroundLocationSettings()
+                pendingEnable = false
+            }
+            Build.VERSION.SDK_INT == 29 && !bgGranted -> bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
             else -> finishEnable()
         }
     }
 
-    // Refresh permissions + distance on every resume
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -193,28 +205,11 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    // ── Map state ───────────────────────────────────────────────────────
     var mapViewRef by remember { mutableStateOf<MapView?>(null) }
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
-        snackbarHost = { SnackbarHost(snackbar) },
-        topBar = { AppTopBar() }
-    ) { pad ->
-        Column(
-            Modifier
-                .fillMaxSize()
-                .padding(pad)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-
-            // ── Hero status card ─────────────────────────────────────────
-            Surface(
-                shape = RoundedCornerShape(16.dp), color = Card,
-                border = BorderStroke(1.dp, Line)
-            ) {
+    Scaffold(containerColor = MaterialTheme.colorScheme.background, snackbarHost = { SnackbarHost(snackbar) }, topBar = { AppTopBar() }) { pad ->
+        Column(Modifier.fillMaxSize().padding(pad).verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Surface(shape = RoundedCornerShape(16.dp), color = Card, border = BorderStroke(1.dp, Line)) {
                 Column(Modifier.padding(18.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
@@ -225,251 +220,102 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                             }
                         }
                         Column(horizontalAlignment = Alignment.End) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 PulseIndicator(ui.monitoring)
-                                Text(
-                                    if (ui.monitoring) "ACTIVE" else "INACTIVE",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = if (ui.monitoring) Teal else Orange
-                                )
+                                Text(if (ui.monitoring) "ACTIVE" else "INACTIVE", style = MaterialTheme.typography.titleMedium, color = if (ui.monitoring) Teal else Orange)
                             }
                             SectionLabel("MONITORING")
                         }
                     }
-                    Spacer(Modifier.height(10.dp))
-                    WaveLine()
+                    Spacer(Modifier.height(10.dp)); WaveLine()
                 }
             }
 
-            // ── Stat cards ───────────────────────────────────────────────
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                StatCard(
-                    label = "HOME",
-                    value = if (ui.home != null) "SET" else "-",
-                    caption = ui.home?.let { String.format("%.4f, %.4f", it.latitude, it.longitude) }
-                        ?: "tap the map below",
-                    accent = if (ui.home != null) Teal else Orange,
-                    modifier = Modifier.weight(1f)
-                )
-                StatCard(
-                    label = "DISTANCE",
-                    value = distance?.formatDistance() ?: "-",
-                    caption = "from home",
-                    accent = Cyan,
-                    modifier = Modifier.weight(1f)
-                )
-                StatCard(
-                    label = "STATE",
-                    value = if (ui.monitoring) "ARMED" else "OFF",
-                    caption = if (ui.monitoring) "geofence live" else "standby",
-                    accent = if (ui.monitoring) Teal else Pink,
-                    modifier = Modifier.weight(1f)
-                )
+                StatCard("HOME", if (ui.home != null) "SET" else "-", ui.home?.let { String.format("%.4f, %.4f", it.latitude, it.longitude) } ?: "tap the map below", if (ui.home != null) Teal else Orange, Modifier.weight(1f))
+                StatCard("DISTANCE", distance?.formatDistance() ?: "-", "from home", Cyan, Modifier.weight(1f))
+                StatCard("STATE", if (ui.monitoring) "ARMED" else "OFF", if (ui.monitoring) "geofence live" else "standby", if (ui.monitoring) Teal else Pink, Modifier.weight(1f))
             }
 
-            // ── Map card (OpenStreetMap via osmdroid, no API key) ─────────
-            Surface(
-                shape = RoundedCornerShape(16.dp), color = Card,
-                border = BorderStroke(1.dp, Line)
-            ) {
+            Surface(shape = RoundedCornerShape(16.dp), color = Card, border = BorderStroke(1.dp, Line)) {
                 Box(Modifier.height(340.dp)) {
-                    AndroidView(
-                        modifier = Modifier.matchParentSize(),
-                        factory = { ctx ->
-                            configureOsmdroid(ctx)
-                            MapView(ctx).apply {
-                                setTileSource(TileSourceFactory.MAPNIK)
-                                setMultiTouchControls(true)
-                                overlayManager.tilesOverlay.setColorFilter(TilesOverlay.INVERT_COLORS)
-                                val start = (ui.home ?: ui.selected)?.let { GeoPoint(it.latitude, it.longitude) }
-                                    ?: GeoPoint(47.4979, 19.0402) // default: Hungary
-                                controller.setZoom(if (ui.home != null) 16.0 else 11.0)
-                                controller.setCenter(start)
-
-                                val receiver = object : MapEventsReceiver {
-                                    override fun singleTapConfirmedHelper(p: GeoPoint): Boolean {
-                                        viewModel.selectLocation(p.latitude, p.longitude)
-                                        return true
-                                    }
-                                    override fun longPressHelper(p: GeoPoint): Boolean = false
-                                }
-                                overlays.add(0, MapEventsOverlay(receiver))
-                                mapViewRef = this
-                                refreshHomeOverlay(ui.selected ?: ui.home, ui.radius.toDouble())
+                    AndroidView(modifier = Modifier.matchParentSize(), factory = { ctx ->
+                        configureOsmdroid(ctx)
+                        MapView(ctx).apply {
+                            setTileSource(TileSourceFactory.MAPNIK)
+                            setUseDataConnection(true)
+                            setMultiTouchControls(true)
+                            val start = (ui.home ?: ui.selected)?.let { GeoPoint(it.latitude, it.longitude) } ?: GeoPoint(47.4979, 19.0402)
+                            controller.setZoom(if (ui.home != null) 16.0 else 11.0)
+                            controller.setCenter(start)
+                            val receiver = object : MapEventsReceiver {
+                                override fun singleTapConfirmedHelper(p: GeoPoint): Boolean { viewModel.selectLocation(p.latitude, p.longitude); return true }
+                                override fun longPressHelper(p: GeoPoint): Boolean = false
                             }
-                        },
-                        update = { view ->
-                            view.refreshHomeOverlay(ui.selected ?: ui.home, ui.radius.toDouble())
+                            overlays.add(0, MapEventsOverlay(receiver))
+                            mapViewRef = this
+                            refreshHomeOverlay(ui.selected ?: ui.home, ui.radius.toDouble())
+                            onResume()
                         }
-                    )
-
+                    }, update = { view ->
+                        view.refreshHomeOverlay(ui.selected ?: ui.home, ui.radius.toDouble())
+                        view.invalidate()
+                    })
                     if (ui.home == null && ui.selected == null) {
                         Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center) {
-                            Text(
-                                "TAP THE MAP TO DROP YOUR HOME MARKER",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = TextMain,
-                                modifier = Modifier
-                                    .background(CardHigh.copy(alpha = 0.9f), RoundedCornerShape(8.dp))
-                                    .padding(12.dp)
-                            )
+                            Text("TAP THE MAP TO DROP YOUR HOME MARKER", style = MaterialTheme.typography.labelSmall, color = TextMain, modifier = Modifier.background(CardHigh.copy(alpha = 0.9f), RoundedCornerShape(8.dp)).padding(12.dp))
                         }
                     }
-
-                    // Save bar
                     val sel = ui.selected
-                    androidx.compose.animation.AnimatedVisibility(
-                        visible = sel != null,
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    ) {
-                        Surface(
-                            Modifier.padding(10.dp),
-                            shape = RoundedCornerShape(12.dp),
-                            color = CardHigh.copy(alpha = 0.97f),
-                            border = BorderStroke(1.dp, Teal.copy(alpha = 0.6f))
-                        ) {
-                            Row(
-                                Modifier.padding(10.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                Icon(Icons.Rounded.LocationOn, null, tint = Pink, modifier = Modifier.size(20.dp))
-                                Column(Modifier.weight(1f)) {
-                                    SectionLabel("NEW HOME")
-                                    Text(
-                                        sel?.let { String.format("%.5f, %.5f", it.latitude, it.longitude) } ?: "",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        color = TextMain
-                                    )
+                    if (sel != null) {
+                        Box(Modifier.fillMaxWidth().align(Alignment.BottomCenter)) {
+                            Surface(Modifier.padding(10.dp), shape = RoundedCornerShape(12.dp), color = CardHigh.copy(alpha = 0.97f), border = BorderStroke(1.dp, Teal.copy(alpha = 0.6f))) {
+                                Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Icon(Icons.Rounded.LocationOn, null, tint = Pink, modifier = Modifier.size(20.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        SectionLabel("NEW HOME")
+                                        Text(String.format("%.5f, %.5f", sel.latitude, sel.longitude), style = MaterialTheme.typography.titleMedium, color = TextMain)
+                                    }
+                                    IconButton(onClick = viewModel::clearSelection) { Icon(Icons.Rounded.Close, "Cancel", tint = TextDim) }
+                                    Button(onClick = { viewModel.saveSelection { scope.launch { snackbar.showSnackbar("Home saved") } } }, colors = ButtonDefaults.buttonColors(containerColor = Teal, contentColor = TealDark)) { Text("SAVE") }
                                 }
-                                IconButton(onClick = viewModel::clearSelection) {
-                                    Icon(Icons.Rounded.Close, "Cancel", tint = TextDim)
-                                }
-                                Button(
-                                    onClick = {
-                                        viewModel.saveSelection {
-                                            scope.launch { snackbar.showSnackbar("Home saved") }
-                                        }
-                                    },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Teal, contentColor = TealDark
-                                    )
-                                ) { Text("SAVE") }
                             }
                         }
                     }
                 }
             }
 
-            // ── Radius slider card ───────────────────────────────────────
-            Surface(
-                shape = RoundedCornerShape(16.dp), color = Card,
-                border = BorderStroke(1.dp, Line)
-            ) {
+            Surface(shape = RoundedCornerShape(16.dp), color = Card, border = BorderStroke(1.dp, Line)) {
                 Column(Modifier.padding(16.dp)) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        SectionLabel("GEOFENCE RADIUS")
-                        Spacer(Modifier.weight(1f))
-                        Text("${ui.radius} m", style = MaterialTheme.typography.titleMedium, color = Teal)
-                    }
-                    Slider(
-                        value = ui.radius.toFloat(),
-                        onValueChange = { viewModel.onRadiusChanged(it.roundToInt()) },
-                        onValueChangeFinished = viewModel::onRadiusChangeFinished,
-                        valueRange = 50f..500f,
-                        steps = 8,
-                        colors = SliderDefaults.colors(
-                            thumbColor = Teal,
-                            activeTrackColor = Teal,
-                            inactiveTrackColor = CardHigh
-                        )
-                    )
-                    Row(Modifier.fillMaxWidth()) {
-                        Text("50 m", style = MaterialTheme.typography.labelSmall, color = TextDim)
-                        Spacer(Modifier.weight(1f))
-                        Text("500 m", style = MaterialTheme.typography.labelSmall, color = TextDim)
-                    }
-                    Text(
-                        "The circle on the map updates live.",
-                        style = MaterialTheme.typography.bodySmall, color = TextDim
-                    )
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) { SectionLabel("GEOFENCE RADIUS"); Spacer(Modifier.weight(1f)); Text("${ui.radius} m", style = MaterialTheme.typography.titleMedium, color = Teal) }
+                    Slider(value = ui.radius.toFloat(), onValueChange = { viewModel.onRadiusChanged(it.roundToInt()) }, onValueChangeFinished = viewModel::onRadiusChangeFinished, valueRange = 50f..500f, steps = 8, colors = SliderDefaults.colors(thumbColor = Teal, activeTrackColor = Teal, inactiveTrackColor = CardHigh))
+                    Row(Modifier.fillMaxWidth()) { Text("50 m", style = MaterialTheme.typography.labelSmall, color = TextDim); Spacer(Modifier.weight(1f)); Text("500 m", style = MaterialTheme.typography.labelSmall, color = TextDim) }
+                    Text("The circle on the map updates live.", style = MaterialTheme.typography.bodySmall, color = TextDim)
                 }
             }
 
-            // ── Monitoring card ──────────────────────────────────────────
-            Surface(
-                shape = RoundedCornerShape(16.dp), color = Card,
-                border = BorderStroke(1.dp, Line)
-            ) {
+            Surface(shape = RoundedCornerShape(16.dp), color = Card, border = BorderStroke(1.dp, Line)) {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            SectionLabel("MONITORING")
-                            Text(
-                                if (ui.monitoring) "Watching for your arrival" else "Geofence is disarmed",
-                                style = MaterialTheme.typography.bodyMedium, color = TextDim
-                            )
-                        }
-                        Switch(
-                            checked = ui.monitoring,
-                            onCheckedChange = { enabled ->
-                                if (!enabled) {
-                                    viewModel.disableMonitoring()
-                                    scope.launch { snackbar.showSnackbar("Monitoring stopped") }
-                                } else if (ui.home == null) {
-                                    scope.launch { snackbar.showSnackbar("Set your home location first") }
-                                } else {
-                                    beginEnable()
-                                }
-                            },
-                            colors = SwitchDefaults.colors(
-                                checkedTrackColor = Teal,
-                                checkedThumbColor = TealDark,
-                                uncheckedTrackColor = CardHigh
-                            )
-                        )
+                        Column(Modifier.weight(1f)) { SectionLabel("MONITORING"); Text(if (ui.monitoring) "Watching for your arrival" else "Geofence is disarmed", style = MaterialTheme.typography.bodyMedium, color = TextDim) }
+                        Switch(checked = ui.monitoring, onCheckedChange = { enabled ->
+                            if (!enabled) { viewModel.disableMonitoring(); scope.launch { snackbar.showSnackbar("Monitoring stopped") } }
+                            else if (ui.home == null) scope.launch { snackbar.showSnackbar("Set your home location first") }
+                            else beginEnable()
+                        }, colors = SwitchDefaults.colors(checkedTrackColor = Teal, checkedThumbColor = TealDark, uncheckedTrackColor = CardHigh))
                     }
                     Spacer(Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PermissionChip("LOCATION", fineGranted) {
-                            locationLauncher.launch(
-                                arrayOf(
-                                    Manifest.permission.ACCESS_FINE_LOCATION,
-                                    Manifest.permission.ACCESS_COARSE_LOCATION
-                                )
-                            )
-                        }
-                        PermissionChip("ALL-TIME", bgGranted) {
-                            if (Build.VERSION.SDK_INT >= 29) {
-                                scope.launch { snackbar.showSnackbar("Choose \"Allow all the time\"") }
-                                context.startActivity(
-                                    Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-                                        .setData(Uri.parse("package:${context.packageName}"))
-                                )
-                            }
-                        }
-                        PermissionChip("NOTIFICATIONS", notifGranted) {
-                            if (Build.VERSION.SDK_INT >= 33) {
-                                notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            }
-                        }
+                        PermissionChip("LOCATION", fineGranted) { locationLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)) }
+                        PermissionChip("ALL-TIME", bgGranted) { if (Build.VERSION.SDK_INT >= 30) openBackgroundLocationSettings() else if (Build.VERSION.SDK_INT == 29) bgLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION) }
+                        PermissionChip("NOTIFICATIONS", notifGranted) { if (Build.VERSION.SDK_INT >= 33) notifLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) }
                     }
                     Spacer(Modifier.height(10.dp))
-                    Text(
-                        "HyperOS/MIUI: allow Autostart and remove battery limits for NetSwitch so background alerts keep working.",
-                        style = MaterialTheme.typography.bodySmall, color = Orange.copy(alpha = 0.85f)
-                    )
+                    Text("For Android 11+ open Location in App permissions and choose Allow all the time. HyperOS/MIUI: allow Autostart and remove battery limits for NetSwitch so background alerts keep working.", style = MaterialTheme.typography.bodySmall, color = Orange.copy(alpha = 0.85f))
                 }
             }
 
-            // ── How it works ─────────────────────────────────────────────
-            Surface(
-                shape = RoundedCornerShape(16.dp), color = Card,
-                border = BorderStroke(1.dp, Line)
-            ) {
+            Surface(shape = RoundedCornerShape(16.dp), color = Card, border = BorderStroke(1.dp, Line)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     SectionLabel("HOW IT WORKS")
                     FlowItem(Icons.Rounded.LocationOn, Teal, "1 - A geofence watches your home zone in the background.")
@@ -477,22 +323,13 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                     FlowItem(Icons.Rounded.Wifi, Pink, "3 - One tap opens the Wi-Fi / mobile-data panel.")
                 }
             }
-
-            Text(
-                "Geofence-based Wi-Fi reminder · all data stays on device",
-                style = MaterialTheme.typography.labelSmall,
-                color = TextDim,
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
+            Text("Geofence-based Wi-Fi reminder · all data stays on device", style = MaterialTheme.typography.labelSmall, color = TextDim, modifier = Modifier.padding(vertical = 4.dp))
         }
     }
 
     DisposableEffect(mapViewRef) {
         mapViewRef?.onResume()
-        onDispose {
-            mapViewRef?.onPause()
-            mapViewRef?.onDetach()
-        }
+        onDispose { mapViewRef?.onPause(); mapViewRef?.onDetach() }
     }
 }
 
@@ -502,65 +339,37 @@ private fun configureOsmdroid(context: android.content.Context) {
     config.load(context, prefs)
     config.userAgentValue = context.packageName
     val basePath = File(context.filesDir, "osmdroid")
+    val tilePath = File(basePath, "tiles")
+    basePath.mkdirs()
+    tilePath.mkdirs()
     config.osmdroidBasePath = basePath
-    config.osmdroidTileCache = File(basePath, "tiles")
+    config.osmdroidTileCache = tilePath
 }
 
-/** Redraws the home marker + radius circle, keeping the tap-listener overlay at index 0. */
 private fun MapView.refreshHomeOverlay(anchor: com.symdev.netswitch.data.HomeLocation?, radiusMeters: Double) {
-    while (overlays.size > 1) {
-        overlays.removeAt(overlays.size - 1)
-    }
+    while (overlays.size > 1) overlays.removeAt(overlays.size - 1)
     if (anchor != null) {
         val point = GeoPoint(anchor.latitude, anchor.longitude)
-
-        val circle = Polygon(this)
-        circle.points = Polygon.pointsAsCircle(point, radiusMeters)
-        circle.fillColor = 0x263BE8C8
-        circle.strokeColor = 0xFF3BE8C8.toInt()
-        circle.strokeWidth = 3f
-        overlays.add(circle)
-
-        val marker = Marker(this)
-        marker.position = point
-        marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-        overlays.add(marker)
+        val circle = Polygon(this); circle.points = Polygon.pointsAsCircle(point, radiusMeters); circle.fillColor = 0x263BE8C8; circle.strokeColor = 0xFF3BE8C8.toInt(); circle.strokeWidth = 3f; overlays.add(circle)
+        val marker = Marker(this); marker.position = point; marker.title = "Home"; marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM); overlays.add(marker)
     }
     invalidate()
 }
 
 @Composable
-private fun FlowItem(icon: ImageVector, tint: Color, text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        Icon(icon, null, tint = tint, modifier = Modifier.size(18.dp))
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = TextMain)
+private fun PermissionChip(label: String, granted: Boolean, onClick: () -> Unit) {
+    Surface(modifier = Modifier.clickable(onClick = onClick), shape = RoundedCornerShape(10.dp), color = if (granted) Teal.copy(alpha = 0.12f) else Orange.copy(alpha = 0.12f), border = BorderStroke(1.dp, if (granted) Teal.copy(alpha = 0.45f) else Orange.copy(alpha = 0.45f))) {
+        Row(Modifier.padding(horizontal = 10.dp, vertical = 7.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(if (granted) Icons.Rounded.Check else Icons.Rounded.Warning, null, tint = if (granted) Teal else Orange, modifier = Modifier.size(16.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall, color = TextMain)
+        }
     }
 }
 
 @Composable
-private fun PermissionChip(label: String, granted: Boolean, onClick: () -> Unit) {
-    Surface(
-        Modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(8.dp),
-        color = if (granted) TealDark else CardHigh,
-        border = BorderStroke(
-            1.dp, if (granted) Teal.copy(alpha = 0.5f) else Orange.copy(alpha = 0.5f)
-        )
-    ) {
-        Row(
-            Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Icon(
-                if (granted) Icons.Rounded.Check else Icons.Rounded.Warning,
-                null, Modifier.size(12.dp),
-                tint = if (granted) Teal else Orange
-            )
-            Text(
-                label, style = MaterialTheme.typography.labelSmall,
-                color = if (granted) Teal else Orange
-            )
-        }
+private fun FlowItem(icon: ImageVector, tint: Color, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Icon(icon, null, tint = tint, modifier = Modifier.size(20.dp))
+        Text(text, style = MaterialTheme.typography.bodySmall, color = TextDim)
     }
 }

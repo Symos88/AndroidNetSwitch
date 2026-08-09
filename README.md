@@ -1,30 +1,29 @@
-# 📡 NetSwitch
+# 📡 NetSwitch 2.0
 
 > **Smart network switching based on location.**
 > An Android app that monitors your geofence and prompts you to toggle Wi-Fi/Mobile Data when arriving home or leaving—no Google account or API key required.
 
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/)
-[![Compose](https://img.shields.io/badge/Jetpack_Compose-Material_3-4285F4?logo=jetpackcompose&logoColor=white)](https://developer.android.com/jetpack/compose)
-[![Android](https://img.shields.io/badge/Min_SDK-26_(Android_8.0+)-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
+[![Jetpack Compose](https://img.shields.io/badge/Jetpack_Compose-Material_3-4285F4?logo=jetpackcompose)](https://developer.android.com/jetpack/compose)
+[![Android](https://img.shields.io/badge/Target_SDK-36-3DDC84?logo=android&logoColor=white)](https://developer.android.com/)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## ✨ Features
+## ✨ NetSwitch 2.0
 
--   **🗺️ Privacy-First Maps:** Uses OpenStreetMap. Set your home location by simply tapping to drop a pin.
--   **🔔 Smart Notifications:** Arrival triggers a "Switch to Wi-Fi" prompt; departure triggers a "Switch to Mobile Data" prompt.
--   **⚡ One-Tap Panel:** Tapping the notification opens Android's built-in Internet panel for instant toggling.
--   **🌙 Modern Dashboard:** Single-screen dark UI with live geofence radius readout, status cards, map overlay, and permission chips.
--   **🔧 Zero Config Build:** No Gradle wrapper binary committed. CI handles the build environment automatically.
+- **🗺️ Privacy-First Maps:** Uses OpenStreetMap. Set your home location by tapping to drop a pin.
+- **🔔 Smart Notifications:** Arrival prompts Wi-Fi; departure prompts mobile data.
+- **⚡ Internet Panel:** Tapping a notification opens Android's built-in Internet panel.
+- **🌙 Modern Dashboard:** Dark UI with live geofence radius, status cards, map overlay, and permission chips.
+- **🧪 Automated Tests:** Geofence radius/state behavior is covered by JVM unit tests.
+- **🔧 CI Builds:** GitHub Actions builds, tests, and smoke-tests both debug and release variants.
 
 ---
 
-## ⚠️ Important: Platform Limitations
+## ⚠️ Platform limitation
 
-> [!NOTE]
-> **Why doesn't it switch automatically?**
-> Since Android 10, apps cannot silently toggle Wi-Fi or Mobile Data due to OS security restrictions. This applies to all non-rooted Play Store apps.
->
-> **The Solution:** NetSwitch fires a contextual notification. Tapping it opens the native Android Internet Panel, allowing you to toggle both radios in 1–2 taps without navigating Settings.
+Since Android 10, regular apps cannot silently toggle Wi-Fi or Mobile Data because of OS security restrictions.
+
+NetSwitch therefore fires a contextual notification. Tapping it opens the native Android Internet Panel, where the requested network can be changed.
 
 ---
 
@@ -33,77 +32,83 @@
 | Path | Description |
 | :--- | :--- |
 | `app/` | Android application (Kotlin + Jetpack Compose, Material 3) |
-| `.github/workflows/build-apk.yml` | Automated APK build pipeline |
-| `app/src/.../notifications/` | Notification text & behavior logic |
-| `app/src/.../ui/theme/` | Colors, typography, and theming |
+| `.github/workflows/build-apk.yml` | Debug/test, release smoke-test, and signed release pipeline |
+| `app/src/.../notification/` | Notification text and behavior |
+| `app/src/.../geofence/` | Geofence registration and transition handling |
+| `app/src/test/` | JVM unit tests |
 
 ---
 
-## 📦 Getting the APK (No Android Studio Needed)
+## 📦 Build and release
 
-This project uses GitHub Actions to build the APK. Follow these steps to generate your own installable file:
+For normal pushes, pull requests, and manual workflow runs, GitHub Actions:
 
-### 1. Push to GitHub
-Create a new **private** repository and push this folder:
+1. Builds the debug APK.
+2. Runs JVM unit tests.
+3. Builds an unsigned release APK as a release-configuration smoke test.
+4. Publishes the debug and release-smoke APKs as artifacts.
 
-```powershell
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/<your-username>/<your-repo>.git
-git push -u origin main
-```
+Release tags (`v*`) additionally require the release signing secrets and produce a signed `NetSwitch 2.0` APK.
 
-### 2. Trigger & Download
-1.  Navigate to the **Actions** tab in your repo.
-2.  If prompted, click *"I understand my workflows, go ahead and enable them"*.
-3.  Wait for the **Build APK** workflow to complete (green checkmark).
-4.  Click the run → Scroll to **Artifacts** → Download `NetSwitch-debug-apk`.
-5.  Extract the ZIP to get `app-debug.apk`.
+### Release signing secrets
 
-> [!TIP]
-> You can manually re-trigger builds anytime via **"Run workflow"** in the Actions tab—no new commit required.
+Configure these repository secrets before creating a release tag:
+
+- `SIGNING_KEY` — base64-encoded JKS/keystore file
+- `KEY_ALIAS`
+- `KEY_PASSWORD`
+- `STORE_PASSWORD`
+
+The CI decodes the keystore only inside the ephemeral runner. The keystore is never committed to the repository. The resulting APK is verified with `apksigner` before the GitHub Release is published.
+
+### Version 2.0
+
+- `versionName`: **2.0**
+- `versionCode`: **20**
+- `minSdk`: 26
+- `targetSdk`: 36
+- `compileSdk`: 36
 
 ---
 
-## 📱 Installation Guide (Android)
+## 📱 Installation
 
-1.  **Transfer:** Copy `app-debug.apk` to your phone (Cloud Drive, USB, or Telegram Saved Messages).
-2.  **Install:** Tap the file in your File Manager. Select **Install anyway** if Play Protect warns about sideloading.
-    -   *Blocked?* Go to **Settings → Apps → [Your File Manager] → Install unknown apps → Allow**.
-3.  **First Launch:**
-    -   Tap the map to set your Home pin → Hit **SAVE**.
-    -   Toggle the **Monitoring** switch.
-    -   Grant Location permissions (*While using* → upgrade to *All the time*) and Notifications.
-4.  **⚡ Critical: Prevent Background Kills**
-    HyperOS aggressively kills background processes. For reliable geofencing:
-    -   Set NetSwitch Battery Saver to **No restrictions**.
-    -   Enable **Autostart** in the Security app.
+1. Transfer `app-debug.apk` to the phone.
+2. Install it through the file manager.
+3. Tap the map to set the Home location and press **SAVE**.
+4. Enable **Monitoring**.
+5. Grant foreground location, background location, and notification permissions as requested.
+6. On OEMs with aggressive background management, allow NetSwitch to run without battery restrictions and enable autostart where applicable.
+
+> Android 11+ requires background location to be enabled through the system settings page rather than the normal permission dialog.
 
 ---
 
 ## 🛠️ Technical Notes
 
-| Detail | Value | Notes |
-| :--- | :--- | :--- |
-| **Build Type** | Debug-signed | Identical functionality to release; different signing key. Not for Play Store. |
-| **AGP** | 8.5.2 | Pinned against current Maven listings. |
-| **Kotlin** | 2.0.21 | Pinned for stability. |
-| **Compile SDK** | 34 | Verified compatible. |
-| **Min SDK** | 26 | Android 8.0+ (F7 Pro runs Android 15/16). |
-| **Geofence Radius** | 50m – 500m | Default: 150m. Adjustable via slider. |
-| **Triggers** | Bidirectional | Arrival & Departure always notify. No separate toggles (minimalist design). |
+| Detail | Value |
+| :--- | :--- |
+| **Version** | 2.0 (20) |
+| **AGP** | 8.9.1 |
+| **Gradle** | 8.11.1 |
+| **Kotlin** | 2.0.21 |
+| **Compile / Target SDK** | 36 / 36 |
+| **Min SDK** | 26 |
+| **Geofence Radius** | 50m – 500m; default 150m |
+| **Triggers** | ENTER + EXIT |
+| **Background monitoring** | Google Play Services Geofencing API |
+| **Permanent foreground service** | Not required |
 
 ### Customization Reference
 
--   **Package Name:** `com.symdev.netswitch` → Edit in `app/build.gradle.kts` & `AndroidManifest.xml`
--   **Notifications:** `NotificationHelper.kt`
--   **Theme/UI:** `ui/theme/` directory
--   **Default Radius:** Modify constant in geofence manager
+- **Package Name:** `com.symdev.netswitch`
+- **Notifications:** `NotificationHelper.kt`
+- **Geofencing:** `GeofenceManager.kt`
+- **Theme/UI:** `ui/theme/`
+- **Default Radius:** `PreferencesManager.DEFAULT_RADIUS`
 
 ---
 
 <div align="center">
-  <sub>Built with ❤️ using Kotlin & Jetpack Compose</sub>
+  <sub>NetSwitch 2.0 · Kotlin + Jetpack Compose + Google Play Services Geofencing + OpenStreetMap</sub>
 </div>

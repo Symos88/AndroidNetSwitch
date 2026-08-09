@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">NetSwitch</string>
     <string name="channel_name">Geofence Alerts</string>
-    <string name="channel_description">High priority notifications when arriving home</string>
-    <string name="notification_title">Welcome home</string>
-    <string name="notification_message">Tap to open Wi-Fi settings</string>
+    <string name="channel_description">High priority notifications when arriving home or leaving</string>
+    <string name="notification_title">Network reminder</string>
+    <string name="notification_message">Open the Internet panel to choose Wi-Fi or mobile data</string>
 </resources>

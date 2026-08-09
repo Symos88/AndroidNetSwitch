@@ -26,7 +26,9 @@ class PreferencesManager(private val context: Context) {
         if (lat != null && lng != null) HomeLocation(lat, lng) else null
     }
 
-    val radius: Flow<Int> = context.dataStore.data.map { prefs -> prefs[Keys.RADIUS] ?: DEFAULT_RADIUS }
+    val radius: Flow<Int> = context.dataStore.data.map { prefs ->
+        (prefs[Keys.RADIUS] ?: DEFAULT_RADIUS).coerceIn(MIN_RADIUS, MAX_RADIUS)
+    }
 
     val monitoringActive: Flow<Boolean> =
         context.dataStore.data.map { prefs -> prefs[Keys.MONITORING] ?: false }
@@ -39,7 +41,9 @@ class PreferencesManager(private val context: Context) {
     }
 
     suspend fun saveRadius(radius: Int) {
-        context.dataStore.edit { prefs -> prefs[Keys.RADIUS] = radius }
+        context.dataStore.edit { prefs ->
+            prefs[Keys.RADIUS] = radius.coerceIn(MIN_RADIUS, MAX_RADIUS)
+        }
     }
 
     suspend fun setMonitoring(enabled: Boolean) {
