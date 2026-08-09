@@ -26,6 +26,9 @@ object GeofenceManager {
         )
     }
 
+    internal fun normalizeRadius(radiusMeters: Int): Int =
+        radiusMeters.coerceIn(50, 500)
+
     @SuppressLint("MissingPermission")
     fun addGeofences(
         context: Context,
@@ -33,9 +36,10 @@ object GeofenceManager {
         radiusMeters: Int,
         callback: (Boolean, String?) -> Unit = { _, _ -> }
     ) {
+        val safeRadius = normalizeRadius(radiusMeters)
         val geofence = Geofence.Builder()
             .setRequestId(HOME_GEOFENCE_ID)
-            .setCircularRegion(home.latitude, home.longitude, radiusMeters.toFloat())
+            .setCircularRegion(home.latitude, home.longitude, safeRadius.toFloat())
             .setExpirationDuration(Geofence.NEVER_EXPIRE)
             .setTransitionTypes(
                 Geofence.GEOFENCE_TRANSITION_ENTER or Geofence.GEOFENCE_TRANSITION_EXIT
