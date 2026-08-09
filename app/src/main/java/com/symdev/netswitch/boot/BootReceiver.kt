@@ -21,14 +21,17 @@ class BootReceiver : BroadcastReceiver() {
 
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.IO).launch {
+            val appContext = context.applicationContext
             try {
-                val appContext = context.applicationContext
                 val prefs = PreferencesManager(appContext)
                 val home = prefs.homeLocation.first()
                 val monitoring = prefs.monitoringActive.first()
                 val radius = prefs.radius.first()
 
-                if (!monitoring || home == null) return@launch
+                if (!monitoring || home == null) {
+                    pendingResult.finish()
+                    return@launch
+                }
 
                 val fineGranted = ContextCompat.checkSelfPermission(
                     appContext,
@@ -41,21 +44,27 @@ class BootReceiver : BroadcastReceiver() {
                         Manifest.permission.ACCESS_BACKGROUND_LOCATION
                     ) == PackageManager.PERMISSION_GRANTED
 
-                if (fineGranted && backgroundGranted) {
-                    GeofenceManager.addGeofences(appContext, home, radius) { ok, _ ->
-                        if (!ok) {
-                            CoroutineScope(Dispatchers.IO).launch {
-                                prefs.setMonitoring(false)
-                            }
+                if (!fineGranted || !backgroundGranted) {
+                    prefs.setMonitoring(false)
+                    pendingResult.finish()
+                    return@launch
+                }
+
+                GeofenceManager.addGeofences(appContext, home, radius) { ok, _ ->
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            if (!ok) prefs.setMonitoring(false)
+                        } finally {
+                            pendingResult.finish()
                         }
                     }
-                } else {
-                    // Permissions may have been revoked while the app was stopped.
-                    // Do not leave the persisted state claiming that monitoring is live.
-                    prefs.setMonitoring(false)
                 }
-            } finally {
-                pendingResult.finish()
+            } catch (_: Exception) {
+                try {
+                    prefs.setMonitoring(false)
+                } finally {
+                    pendingResult.finish()
+                }
             }
         }
     }
