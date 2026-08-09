@@ -73,7 +73,9 @@ jobs:
         if: github.ref_type == 'tag'
         run: |
           set -euo pipefail
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose app/build/outputs/apk/release/app-release.apk
+          APKSIGNER=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner | sort -V | tail -n 1)
+          test -n "$APKSIGNER"
+          "$APKSIGNER" verify --verbose app/build/outputs/apk/release/app-release.apk
 
       - name: Create GitHub Release
         if: github.ref_type == 'tag'
