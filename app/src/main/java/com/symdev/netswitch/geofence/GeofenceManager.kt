@@ -44,7 +44,9 @@ object GeofenceManager {
             .build()
 
         val request = GeofencingRequest.Builder()
-            .setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER)
+            // Do not synthesize an ENTER notification when the geofence is
+            // registered after a reboot or monitoring is re-enabled.
+            .setInitialTrigger(0)
             .addGeofence(geofence)
             .build()
 
