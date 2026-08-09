@@ -10,12 +10,16 @@ private val AppFont = FontFamily.SansSerif
 
 val NetTypography = Typography(
     displayLarge = TextStyle(AppFont, FontWeight.Bold, 42.sp, letterSpacing = (-1.2).sp),
+    headlineLarge = TextStyle(AppFont, FontWeight.Bold, 30.sp, letterSpacing = (-0.5).sp),
     headlineMedium = TextStyle(AppFont, FontWeight.Bold, 24.sp, letterSpacing = (-0.3).sp),
     headlineSmall = TextStyle(AppFont, FontWeight.Bold, 21.sp, letterSpacing = (-0.2).sp),
     titleLarge = TextStyle(AppFont, FontWeight.Bold, 20.sp, letterSpacing = 0.2.sp),
     titleMedium = TextStyle(AppFont, FontWeight.SemiBold, 15.sp, letterSpacing = 0.1.sp),
+    titleSmall = TextStyle(AppFont, FontWeight.SemiBold, 14.sp),
+    labelLarge = TextStyle(AppFont, FontWeight.SemiBold, 14.sp),
     labelMedium = TextStyle(AppFont, FontWeight.SemiBold, 11.sp, letterSpacing = 0.7.sp),
     labelSmall = TextStyle(AppFont, FontWeight.SemiBold, 10.sp, letterSpacing = 1.1.sp),
+    bodyLarge = TextStyle(AppFont, FontWeight.Normal, 16.sp, lineHeight = 24.sp),
     bodyMedium = TextStyle(AppFont, FontWeight.Normal, 14.sp, lineHeight = 20.sp),
     bodySmall = TextStyle(AppFont, FontWeight.Normal, 12.sp, lineHeight = 17.sp)
 )
