@@ -56,10 +56,14 @@ object GeofenceManager {
             .addGeofence(geofence)
             .build()
 
-        LocationServices.getGeofencingClient(context)
-            .addGeofences(request, pendingIntent(context))
-            .addOnSuccessListener { callback(true, null) }
-            .addOnFailureListener { callback(false, it.message) }
+        try {
+            LocationServices.getGeofencingClient(context)
+                .addGeofences(request, pendingIntent(context))
+                .addOnSuccessListener { callback(true, null) }
+                .addOnFailureListener { callback(false, it.message) }
+        } catch (security: SecurityException) {
+            callback(false, security.message ?: "Location permission is required.")
+        }
     }
 
     fun removeGeofences(context: Context) {
