@@ -89,7 +89,8 @@ The CI decodes the keystore only inside the ephemeral runner. The keystore is ne
 | Detail | Value |
 | :--- | :--- |
 | **Version** | 2.0 (20) |
-| **AGP** | 8.5.2 |
+| **AGP** | 8.9.1 |
+| **Gradle** | 8.11.1 |
 | **Kotlin** | 2.0.21 |
 | **Compile / Target SDK** | 36 / 36 |
 | **Min SDK** | 26 |
