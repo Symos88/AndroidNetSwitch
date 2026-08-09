@@ -11,8 +11,15 @@ import com.symdev.netswitch.data.HomeLocation
 
 object GeofenceManager {
 
+    const val MIN_RADIUS = 50
+    const val MAX_RADIUS = 500
+    const val DEFAULT_RADIUS = 150
+
     private const val HOME_GEOFENCE_ID = "home_geofence"
     const val ACTION_GEOFENCE_EVENT = "com.symdev.netswitch.ACTION_GEOFENCE_EVENT"
+
+    fun normalizeRadius(radiusMeters: Int): Int =
+        radiusMeters.coerceIn(MIN_RADIUS, MAX_RADIUS)
 
     private fun pendingIntent(context: Context): PendingIntent {
         val intent = Intent(context, GeofenceBroadcastReceiver::class.java).apply {
@@ -25,9 +32,6 @@ object GeofenceManager {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
-
-    internal fun normalizeRadius(radiusMeters: Int): Int =
-        radiusMeters.coerceIn(50, 500)
 
     @SuppressLint("MissingPermission")
     fun addGeofences(
@@ -48,8 +52,6 @@ object GeofenceManager {
             .build()
 
         val request = GeofencingRequest.Builder()
-            // Do not synthesize an ENTER notification when the geofence is
-            // registered after a reboot or monitoring is re-enabled.
             .setInitialTrigger(0)
             .addGeofence(geofence)
             .build()
