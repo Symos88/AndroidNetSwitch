@@ -9,7 +9,6 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -227,16 +226,18 @@ fun NetSwitchScreen(viewModel: HomeViewModel) {
                         }
                     }
                     val sel = ui.selected
-                    AnimatedVisibility(visible = sel != null, modifier = Modifier.align(Alignment.BottomCenter)) {
-                        Surface(Modifier.padding(10.dp), shape = RoundedCornerShape(12.dp), color = CardHigh.copy(alpha = 0.97f), border = BorderStroke(1.dp, Teal.copy(alpha = 0.6f))) {
-                            Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Icon(Icons.Rounded.LocationOn, null, tint = Pink, modifier = Modifier.size(20.dp))
-                                Column(Modifier.weight(1f)) {
-                                    SectionLabel("NEW HOME")
-                                    Text(sel?.let { String.format("%.5f, %.5f", it.latitude, it.longitude) } ?: "", style = MaterialTheme.typography.titleMedium, color = TextMain)
+                    if (sel != null) {
+                        Box(Modifier.fillMaxWidth().align(Alignment.BottomCenter)) {
+                            Surface(Modifier.padding(10.dp), shape = RoundedCornerShape(12.dp), color = CardHigh.copy(alpha = 0.97f), border = BorderStroke(1.dp, Teal.copy(alpha = 0.6f))) {
+                                Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Icon(Icons.Rounded.LocationOn, null, tint = Pink, modifier = Modifier.size(20.dp))
+                                    Column(Modifier.weight(1f)) {
+                                        SectionLabel("NEW HOME")
+                                        Text(String.format("%.5f, %.5f", sel.latitude, sel.longitude), style = MaterialTheme.typography.titleMedium, color = TextMain)
+                                    }
+                                    IconButton(onClick = viewModel::clearSelection) { Icon(Icons.Rounded.Close, "Cancel", tint = TextDim) }
+                                    Button(onClick = { viewModel.saveSelection { scope.launch { snackbar.showSnackbar("Home saved") } } }, colors = ButtonDefaults.buttonColors(containerColor = Teal, contentColor = TealDark)) { Text("SAVE") }
                                 }
-                                IconButton(onClick = viewModel::clearSelection) { Icon(Icons.Rounded.Close, "Cancel", tint = TextDim) }
-                                Button(onClick = { viewModel.saveSelection { scope.launch { snackbar.showSnackbar("Home saved") } } }, colors = ButtonDefaults.buttonColors(containerColor = Teal, contentColor = TealDark)) { Text("SAVE") }
                             }
                         }
                     }
