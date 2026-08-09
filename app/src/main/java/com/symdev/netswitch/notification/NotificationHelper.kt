@@ -6,8 +6,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import com.google.android.gms.location.Geofence
 import com.symdev.netswitch.R
 import com.symdev.netswitch.ui.SettingsRedirectActivity
@@ -16,7 +16,6 @@ object NotificationHelper {
 
     private const val CHANNEL_ID = "geofence_alert_channel"
     private const val NOTIF_ID = 2001
-    private const val EXTRA_TARGET = "target"
 
     fun showGeofenceNotification(context: Context, transition: Int) {
         if (transition != Geofence.GEOFENCE_TRANSITION_ENTER &&
@@ -24,39 +23,28 @@ object NotificationHelper {
         ) return
 
         createChannel(context)
-
-        // Android 13+ can block notifications at runtime. A geofence event can
-        // arrive while the app UI is not running, so never attempt to post a
-        // notification when the app is not allowed to notify.
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
 
         val isArrival = transition == Geofence.GEOFENCE_TRANSITION_ENTER
-        val wifiIntent = Intent(context, SettingsRedirectActivity::class.java).apply {
-            putExtra(EXTRA_TARGET, "wifi")
-        }
-        val dataIntent = Intent(context, SettingsRedirectActivity::class.java).apply {
-            putExtra(EXTRA_TARGET, "data")
-        }
-
-        val wifiPending = PendingIntent.getActivity(
-            context,
-            0,
-            wifiIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val dataPending = PendingIntent.getActivity(
-            context,
-            1,
-            dataIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
+        val target = if (isArrival) "wifi" else "data"
+        val label = if (isArrival) "Wi-Fi" else "Mobile Data"
+        val icon = if (isArrival) R.drawable.ic_wifi else R.drawable.ic_data
         val title = if (isArrival) "Welcome home" else "Leaving home"
         val message = if (isArrival) {
             "Open the Internet panel to switch to Wi-Fi"
         } else {
             "Open the Internet panel to switch to mobile data"
         }
+
+        val intent = Intent(context, SettingsRedirectActivity::class.java).apply {
+            putExtra(SettingsRedirectActivity.EXTRA_TARGET, target)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            NOTIF_ID,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
@@ -65,8 +53,8 @@ object NotificationHelper {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_EVENT)
             .setAutoCancel(true)
-            .addAction(R.drawable.ic_wifi, "Wi-Fi", wifiPending)
-            .addAction(R.drawable.ic_data, "Mobile Data", dataPending)
+            .addAction(icon, label, pendingIntent)
+            .setContentIntent(pendingIntent)
             .build()
 
         NotificationManagerCompat.from(context).notify(NOTIF_ID, notification)
