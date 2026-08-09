@@ -26,7 +26,6 @@ object NotificationHelper {
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
 
         val isArrival = transition == Geofence.GEOFENCE_TRANSITION_ENTER
-        val target = if (isArrival) "wifi" else "data"
         val label = if (isArrival) "Wi-Fi" else "Mobile Data"
         val icon = if (isArrival) R.drawable.ic_wifi else R.drawable.ic_data
         val title = if (isArrival) "Welcome home" else "Leaving home"
@@ -36,9 +35,7 @@ object NotificationHelper {
             "Open the Internet panel to switch to mobile data"
         }
 
-        val intent = Intent(context, SettingsRedirectActivity::class.java).apply {
-            putExtra(SettingsRedirectActivity.EXTRA_TARGET, target)
-        }
+        val intent = Intent(context, SettingsRedirectActivity::class.java)
         val pendingIntent = PendingIntent.getActivity(
             context,
             NOTIF_ID,
