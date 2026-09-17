@@ -1,0 +1,42 @@
+[
+    {
+        "merged": "com.symdev.netswitch.app-debug-56:/raw_map_style_dark.json.flat",
+        "source": "com.symdev.netswitch.app-main-58:/raw/map_style_dark.json"
+    },
+    {
+        "merged": "com.symdev.netswitch.app-debug-56:/mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "com.symdev.netswitch.app-main-58:/mipmap-anydpi-v26/ic_launcher_round.xml"
+    },
+    {
+        "merged": "com.symdev.netswitch.app-debug-56:/drawable_ic_notification.xml.flat",
+        "source": "com.symdev.netswitch.app-main-58:/drawable/ic_notification.xml"
+    },
+    {
+        "merged": "com.symdev.netswitch.app-debug-56:/drawable_ic_launcher_background.xml.flat",
+        "source": "com.symdev.netswitch.app-main-58:/drawable/ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.symdev.netswitch.app-debug-56:/xml_data_extraction_rules.xml.flat",
+        "source": "com.symdev.netswitch.app-main-58:/xml/data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.symdev.netswitch.app-debug-56:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.symdev.netswitch.app-main-58:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.symdev.netswitch.app-debug-56:/drawable_ic_data.xml.flat",
+        "source": "com.symdev.netswitch.app-main-58:/drawable/ic_data.xml"
+    },
+    {
+        "merged": "com.symdev.netswitch.app-debug-56:/drawable_ic_wifi.xml.flat",
+        "source": "com.symdev.netswitch.app-main-58:/drawable/ic_wifi.xml"
+    },
+    {
+        "merged": "com.symdev.netswitch.app-debug-56:/xml_backup_rules.xml.flat",
+        "source": "com.symdev.netswitch.app-main-58:/xml/backup_rules.xml"
+    },
+    {
+        "merged": "com.symdev.netswitch.app-debug-56:/mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "com.symdev.netswitch.app-main-58:/mipmap-anydpi-v26/ic_launcher.xml"
+    }
+]

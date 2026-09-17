@@ -1,19 +1,11 @@
-*.iml
-.gradle/
-/local.properties
-.idea/
-.DS_Store
-/build
-/app/build
-/captures
-.externalNativeBuild
-.cxx
-*.apk
-*.aab
+```
+# Logs and temp files
+*.log
+hs_err_*.log
 
-# Build output
-app/build/
-build/
-.gradle/
+# Kotlin compiler sessions
+.kotlin/
 
-release-key.jks
+# Gradle
+.gradle/
+```
