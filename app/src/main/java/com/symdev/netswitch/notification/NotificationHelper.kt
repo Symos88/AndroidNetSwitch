@@ -14,7 +14,7 @@ import com.symdev.netswitch.ui.SettingsRedirectActivity
 
 object NotificationHelper {
 
-    private const val CHANNEL_ID = "geofence_alert_channel"
+    private const val CHANNEL_ID = "geofence_channel"
     private const val NOTIF_ID = 2001
 
     fun showGeofenceNotification(context: Context, transition: Int) {
